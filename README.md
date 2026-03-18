@@ -6,7 +6,7 @@ Salin isi folder ini ke dalam project Next.js kamu.
 ## Struktur file yang ada di zip ini:
 
 ```
-middleware.ts                          → taruh di ROOT project (sejajar src/)
+middleware.ts                         
 src/
 ├── lib/
 │   └── supabase/
@@ -23,7 +23,5 @@ src/
             └── page.tsx              → Halaman tunggu verifikasi petani
 ```
 
-## Setelah copy:
-1. Pastikan .env.local sudah diisi dengan credentials Supabase
-2. Jalankan: npm run dev
-3. Buka localhost:3000/login untuk test
+
+## Buka localhost:3000/login untuk test
