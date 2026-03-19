@@ -1,4 +1,4 @@
-# 🌿 KiTani — Marketplace Pertanian Digital
+# 🌿 KiTani - Marketplace Pertanian Digital
 
 **KiTani** adalah platform marketplace yang dirancang untuk menghubungkan petani lokal secara langsung dengan pembeli. Platform ini bertujuan menciptakan ekosistem pertanian yang lebih **adil, transparan, dan efisien** melalui pemanfaatan teknologi digital.
 
