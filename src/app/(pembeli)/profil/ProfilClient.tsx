@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   User, Phone, MapPin, Mail, Edit2, Check, X,
   ShoppingBag, Package, ArrowLeft, LogOut,
-  ChevronRight, Bell, Camera, Loader
+  ChevronRight, Bell, Camera, Loader, Sprout, Code
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
@@ -139,10 +139,10 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
           <div className="flex flex-col items-center">
             <div className="relative mb-3">
               <div className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center text-2xl font-bold"
-                style={{ background: '#71BC68', color: '#0A4C3E' }}>
+                style={{ background: '#71BC68', color: '#0A4C3E', minWidth: 80, maxWidth: 80, minHeight: 80, maxHeight: 80 }}>
                 {profile.avatar_url ? (
-                  <Image src={profile.avatar_url} alt="Avatar" width={80} height={80}
-                    className="object-cover w-full h-full" unoptimized />
+                  <img src={profile.avatar_url} alt="Avatar"
+                    style={{ width: 80, height: 80, objectFit: 'cover', display: 'block' }} />
                 ) : initials}
               </div>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
@@ -158,7 +158,21 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
             <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
               {profile.full_name ?? 'Pengguna'}
             </h2>
-            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>Bergabung sejak {joinDate}</p>
+            <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full"
+              style={{ background: email === 'rifki.dupon07@gmail.com' ? 'rgba(99,102,241,0.2)' : 'rgba(113,188,104,0.2)' }}>
+              {email === 'rifki.dupon07@gmail.com'
+                ? <Code size={12} color="#818cf8" />
+                : profile.role === 'pembeli'
+                  ? <ShoppingBag size={12} color="#71BC68" />
+                  : profile.role === 'petani'
+                    ? <Sprout size={12} color="#71BC68" />
+                    : <User size={12} color="#71BC68" />
+              }
+              <span className="text-xs font-bold" style={{ color: email === 'rifki.dupon07@gmail.com' ? '#818cf8' : '#71BC68' }}>
+                {email === 'rifki.dupon07@gmail.com' ? 'Developer' : profile.role === 'pembeli' ? 'Pembeli' : profile.role === 'petani' ? 'Petani' : 'Admin'}
+              </span>
+            </div>
+            <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.55)' }}>Bergabung sejak {joinDate}</p>
             {uploadingAvatar && <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>Mengupload foto...</p>}
           </div>
         </div>
@@ -206,22 +220,30 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
 
           <div className="px-5 py-3 space-y-4">
             {[
-              { icon: User, label: 'Nama Lengkap', value: profile.full_name, editing: true,
+              {
+                icon: User, label: 'Nama Lengkap', value: profile.full_name, editing: true,
                 input: <input value={fullName} onChange={e => setFullName(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl text-sm border focus:outline-none"
-                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} /> },
-              { icon: Mail, label: 'Email', value: email, editing: false,
-                note: 'Email tidak dapat diubah' },
-              { icon: Phone, label: 'Nomor HP', value: profile.phone, editing: true,
+                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} />
+              },
+              {
+                icon: Mail, label: 'Email', value: email, editing: false,
+                note: 'Email tidak dapat diubah'
+              },
+              {
+                icon: Phone, label: 'Nomor HP', value: profile.phone, editing: true,
                 input: <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                   placeholder="08xxxxxxxxxx"
                   className="w-full px-3 py-2.5 rounded-xl text-sm border focus:outline-none"
-                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} /> },
-              { icon: MapPin, label: 'Alamat', value: profile.address, editing: true,
+                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} />
+              },
+              {
+                icon: MapPin, label: 'Alamat', value: profile.address, editing: true,
                 input: <textarea value={address} onChange={e => setAddress(e.target.value)}
                   placeholder="Masukkan alamat lengkap" rows={3}
                   className="w-full px-3 py-2.5 rounded-xl text-sm border focus:outline-none resize-none"
-                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} /> },
+                  style={{ borderColor: '#71BC68', color: '#0A4C3E' }} />
+              },
             ].map(field => (
               <div key={field.label}>
                 <div className="flex items-center gap-2 mb-1.5">
