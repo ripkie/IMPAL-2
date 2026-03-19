@@ -24,4 +24,4 @@ src/
 ```
 
 
-## Buka localhost:3000/login untuk test
+## Buka localhost:3000/login untuk test.
