@@ -55,15 +55,26 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
     const supabase = createClient()
     try {
       const ext = file.name.split('.').pop()
-      const filePath = `${profile.id}/avatar.${ext}`
+      const timestamp = Date.now()
+      const filePath = `${profile.id}/avatar_${timestamp}.${ext}`
+
+      // Hapus file avatar lama dulu (kalau ada)
+      if (profile.avatar_url) {
+        const oldPath = profile.avatar_url
+          .split('/avatars/')[1]
+          ?.split('?')[0]
+        if (oldPath) {
+          await supabase.storage.from('avatars').remove([oldPath])
+        }
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true })
+        .upload(filePath, file, { upsert: false })
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      const avatarUrl = `${publicUrl}?t=${Date.now()}`
+      const avatarUrl = publicUrl
 
       const { error: updateError } = await supabase
         .from('profiles')
