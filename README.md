@@ -1,88 +1,148 @@
 # 🌿 KiTani — Marketplace Pertanian Digital
 
-**KiTani** adalah platform marketplace yang dirancang untuk menghubungkan petani lokal secara langsung dengan pembeli. Platform ini bertujuan untuk menciptakan ekosistem pertanian yang lebih adil, transparan, dan efisien melalui teknologi digital.
+**KiTani** adalah platform marketplace yang dirancang untuk menghubungkan petani lokal secara langsung dengan pembeli. Platform ini bertujuan menciptakan ekosistem pertanian yang lebih **adil, transparan, dan efisien** melalui pemanfaatan teknologi digital.
 
 ---
 
 ## 🚀 Teknologi Utama
 
-Proyek ini dikembangkan menggunakan stack teknologi modern untuk memastikan performa dan skalabilitas:
-* **Framework**: [Next.js 16.1.7 (App Router)](https://nextjs.org/).
-* **Bahasa**: [TypeScript 5](https://www.typescriptlang.org/).
-* **Backend & Database**: [Supabase](https://supabase.com/) dengan dukungan SSR.
-* **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) dan [Lucide React](https://lucide.dev/) untuk ikon.
-* **Animasi**: [Framer Motion 12](https://www.framer.com/motion/).
-* **Payment Gateway**: [Midtrans](https://midtrans.com/).
+Proyek ini dibangun menggunakan teknologi modern untuk memastikan performa, skalabilitas, dan maintainability:
+
+- **Framework**: [Next.js 16.1.7 (App Router)](https://nextjs.org/)
+- **Bahasa**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Backend & Database**: [Supabase](https://supabase.com/) (SSR Support)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Animasi**: [Framer Motion](https://www.framer.com/motion/)
+- **Payment Gateway**: [Midtrans](https://midtrans.com/)
 
 ---
 
 ## 🛠️ Fitur Utama
-### 1. Manajemen Role Pengguna
-Sistem mendukung tiga jenis role utama dengan hak akses yang berbeda:
 
-Pembeli: Mencari produk, mengelola keranjang, dan melakukan pembelian.
+### 👥 Manajemen Role Pengguna
 
-Petani: Mengelola profil pertanian dan produk yang dijual.
+Sistem mendukung tiga jenis role utama:
 
-Admin: Melakukan verifikasi terhadap akun petani dan memantau platform.
+- **Pembeli**
+  - Mencari produk
+  - Mengelola keranjang
+  - Melakukan pembelian
 
-### 2. Alur Transaksi & Pembayaran
-Status Pesanan: Mendukung pelacakan dari pending, paid, processing, shipped, hingga done.
+- **Petani**
+  - Mengelola profil pertanian
+  - Mengelola produk
 
-Integrasi Pembayaran: Menggunakan Midtrans untuk menangani status pembayaran seperti paid, failed, atau refunded.
+- **Admin**
+  - Verifikasi akun petani
+  - Monitoring aktivitas platform
 
-### 3. Verifikasi Keamanan
-Setiap petani diwajibkan mengunggah dokumen identitas (KTP) dan sertifikat pertanian untuk diverifikasi oleh admin sebelum dapat mulai berjualan di platform.
+---
+
+### 💳 Alur Transaksi & Pembayaran
+
+- **Status Pesanan**
+pending → paid → processing → shipped → done
+
+- **Integrasi Midtrans**
+- paid
+- failed
+- refunded
+
+---
+
+### 🔐 Verifikasi Keamanan
+
+Untuk menjaga kepercayaan platform:
+
+- Petani wajib mengunggah:
+- KTP
+- Sertifikat pertanian
+- Admin akan melakukan verifikasi sebelum petani dapat berjualan
+
+---
 
 ## 📊 Data Flow Diagram (DFD)
-### DFD Level 0 (Context Diagram)
-Diagram ini menggambarkan aliran data antara sistem KiTani dengan entitas eksternal:
 
-Pembeli: Mengirim data pesanan dan menerima informasi produk serta status transaksi.
+### 🔹 DFD Level 0 (Context Diagram)
 
-Petani: Mengirim data produk dan dokumen legalitas; menerima pemberitahuan pesanan.
+- **Pembeli**
+- Mengirim data pesanan
+- Menerima informasi produk & status transaksi
 
-Admin: Melakukan validasi data dan menerima laporan aktivitas platform.
+- **Petani**
+- Mengirim data produk & dokumen legalitas
+- Menerima notifikasi pesanan
 
-Midtrans: Menerima instruksi pembayaran dan mengirimkan status pelunasan transaksi.
+- **Admin**
+- Validasi data
+- Monitoring aktivitas platform
 
-FOTOOO
+- **Midtrans**
+- Menerima instruksi pembayaran
+- Mengirim status transaksi
 
-## DFD Level 1 (Diagram Dekomposisi)
-Proses internal dibagi menjadi modul-modul berikut:
 
-Manajemen Pengguna: Proses pendaftaran dan autentikasi menggunakan Supabase Auth.
+---
 
-Modul Verifikasi: Alur peninjauan dokumen petani oleh admin.
+### 🔹 DFD Level 1 (Diagram Dekomposisi)
 
-Katalog & Inventaris: Manajemen produk oleh petani (stok, harga, kategori).
+- **Manajemen Pengguna**
+  - Registrasi & autentikasi (Supabase Auth)
 
-Transaksi & Checkout: Pemrosesan keranjang belanja hingga pembuatan pesanan.
+- **Modul Verifikasi**
+  - Validasi dokumen petani oleh admin
 
-Gateway Pembayaran: Sinkronisasi status pembayaran dengan API Midtrans.
+- **Katalog & Inventaris**
+  - Manajemen produk (stok, harga, kategori)
 
-Notifikasi: Pengiriman pesan sistem kepada pengguna berdasarkan aktivitas (order, promo, dll).
+- **Transaksi & Checkout**
+  - Proses keranjang hingga order
 
-[!IMPORTANT]
-[TEMPATKAN FOTO DFD LEVEL 1 DI SINI]
+- **Gateway Pembayaran**
+  - Sinkronisasi dengan Midtrans API
 
-## 🚦 Cara Penggunaan
-Instalasi Dependensi:
+- **Notifikasi**
+  - Notifikasi sistem (order, promo, dll)
 
-### Bash
+
+---
+
+## 🚦 Cara Menjalankan Project
+
+### 1. Install Dependencies
+
+```bash
 npm install
-Konfigurasi Environment:
-Siapkan environment variable untuk Supabase dan Midtrans di file .env.
 
-Menjalankan Server Lokal:
+### 2. Konfigurasi Environment
 
-### Bash
+Buat file .env dan isi dengan:
+
+Supabase URL & Key
+
+Midtrans Server Key & Client Key
+
+### Jalankan Server Lokal 
 npm run dev
-Buka http://localhost:3000/login untuk memulai pengujian.
 
-Build untuk Produksi:
+Buka:
 
-Bash
+http://localhost:3000/login
+4. Build untuk Produksi
 npm run build
 npm run start
-© 2026 KiTani.
+📌 Catatan
+
+Pastikan environment variables sudah dikonfigurasi
+
+Gunakan Midtrans sandbox untuk testing
+
+© 2026 KiTani
+
+All rights reserved.
+
+
+Kalau mau next step, aku bisa:
+- bikin versi README yang “wow” (dengan badge + preview UI + demo link)
+- atau bantu bikin struktur repo biar kelihatan profesional di GitHub 👍
