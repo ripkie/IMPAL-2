@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   ArrowRight, Bell, ShoppingCart, Package, ChevronLeft,
   ChevronRight, Leaf, Truck, ShieldCheck, Star, Clock,
-  Sunrise, Sun, Sunset, Moon, UtensilsCrossed
+  Sunrise, Sun, Sunset, Moon, UtensilsCrossed, Zap
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ProductCard from '@/components/ui/ProductCard'
@@ -29,83 +29,78 @@ interface Props {
   pesananAktif: Order[]
 }
 
-// ── BANNER DATA ──────────────────────────────────────────────
 const BANNERS = [
   {
     id: 'promo1',
     type: 'promo',
-    bg: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)',
+    bg: 'linear-gradient(120deg, #0A4C3E 0%, #0d6b55 60%, #1a8a6a 100%)',
     badge: '🔥 Flash Sale',
-    badgeBg: 'rgba(220,53,69,0.9)',
+    badgeBg: 'rgba(220,53,69,0.95)',
     title: 'Diskon 30%\nSayuran Hijau',
     subtitle: 'Promo hari ini s/d pukul 23.59. Stok terbatas!',
     cta: 'Belanja Sekarang',
     ctaAction: '/produk?kategori=sayuran-hijau',
     accent: '#71BC68',
-    // Sayuran hijau segar di pasar
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300&h=200&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&h=400&fit=crop&auto=format',
   },
   {
     id: 'promo2',
     type: 'promo',
-    bg: 'linear-gradient(135deg, #1a6b3a 0%, #2d9e5a 100%)',
+    bg: 'linear-gradient(120deg, #1a6b3a 0%, #2d9e5a 60%, #3dbf70 100%)',
     badge: '🚚 Gratis Ongkir',
-    badgeBg: 'rgba(45,158,90,0.85)',
+    badgeBg: 'rgba(45,158,90,0.95)',
     title: 'Gratis Ongkir\nMin. Rp 75.000',
     subtitle: 'Berlaku untuk semua wilayah Indonesia. Pesan sekarang!',
     cta: 'Order Sekarang',
     ctaAction: '/produk',
     accent: '#A8E6A3',
-    // Kotak pengiriman sayuran
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=300&h=200&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&h=400&fit=crop&auto=format',
   },
   {
     id: 'resep1',
     type: 'resep',
-    bg: 'linear-gradient(135deg, #2C5F2E 0%, #4a8c4c 100%)',
+    bg: 'linear-gradient(120deg, #2C5F2E 0%, #4a8c4c 60%, #5fa860 100%)',
     badge: '👨‍🍳 Resep Hari Ini',
-    badgeBg: 'rgba(200,150,0,0.9)',
+    badgeBg: 'rgba(200,150,0,0.95)',
     title: 'Sayur Lodeh\nSegar & Gurih',
     subtitle: 'Masak sendiri di rumah dengan bahan organik segar dari KiTani',
     cta: 'Lihat Bahan & Beli',
     ctaAction: null,
     accent: '#FFD700',
-    // Sayur lodeh
-    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=300&h=200&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800&h=400&fit=crop&auto=format',
     recipe: {
       name: 'Sayur Lodeh',
       desc: 'Masakan rumahan khas Jawa yang lezat dan menyehatkan',
       bahan: [
-        { nama: 'Labu Siam', qty: '200g', kategori: 'sayuran-hijau' },
-        { nama: 'Kacang Panjang', qty: '100g', kategori: 'kacang-kacangan' },
-        { nama: 'Wortel', qty: '150g', kategori: 'umbi-umbian' },
-        { nama: 'Tempe', qty: '200g', kategori: 'lainnya' },
-        { nama: 'Daun Salam', qty: '3 lembar', kategori: 'herbal-rempah' },
-        { nama: 'Lengkuas', qty: '2 cm', kategori: 'herbal-rempah' },
+        { nama: 'Labu Siam', qty: '200g' },
+        { nama: 'Kacang Panjang', qty: '100g' },
+        { nama: 'Wortel', qty: '150g' },
+        { nama: 'Tempe', qty: '200g' },
+        { nama: 'Daun Salam', qty: '3 lembar' },
+        { nama: 'Lengkuas', qty: '2 cm' },
       ]
     }
   },
   {
     id: 'resep2',
     type: 'resep',
-    bg: 'linear-gradient(135deg, #1B4332 0%, #40916C 100%)',
+    bg: 'linear-gradient(120deg, #1B4332 0%, #40916C 60%, #52b788 100%)',
     badge: '🥗 Resep Sehat',
-    badgeBg: 'rgba(64,145,108,0.9)',
+    badgeBg: 'rgba(64,145,108,0.95)',
     title: 'Tumis Kangkung\nBawang Putih',
     subtitle: 'Sehat, cepat, dan lezat. Cocok untuk makan siang!',
     cta: 'Lihat Bahan & Beli',
     ctaAction: null,
     accent: '#74C69D',
-    // Tumis kangkung
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=200&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=400&fit=crop&auto=format',
     recipe: {
       name: 'Tumis Kangkung Bawang Putih',
       desc: 'Sayur tumis favorit yang kaya zat besi dan vitamin',
       bahan: [
-        { nama: 'Kangkung', qty: '300g', kategori: 'sayuran-hijau' },
-        { nama: 'Bawang Putih', qty: '5 siung', kategori: 'herbal-rempah' },
-        { nama: 'Cabai Merah', qty: '3 buah', kategori: 'herbal-rempah' },
-        { nama: 'Terasi', qty: '1 sdt', kategori: 'lainnya' },
+        { nama: 'Kangkung', qty: '300g' },
+        { nama: 'Bawang Putih', qty: '5 siung' },
+        { nama: 'Cabai Merah', qty: '3 buah' },
+        { nama: 'Terasi', qty: '1 sdt' },
       ]
     }
   },
@@ -138,38 +133,31 @@ function RecipeModal({ recipe, image, onClose, onCheckout }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center px-4 pb-4"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose}>
-      <div className="w-full max-w-md rounded-3xl overflow-hidden"
-        style={{ background: 'white' }}
+      style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+      <div className="w-full max-w-md rounded-3xl overflow-hidden" style={{ background: 'white' }}
         onClick={e => e.stopPropagation()}>
-
-        {/* Header dengan gambar */}
-        <div className="relative h-40 overflow-hidden">
+        <div className="relative h-44 overflow-hidden">
           <Image src={image} alt={recipe.name} fill className="object-cover" />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,76,62,0.95) 40%, rgba(10,76,62,0.3) 100%)' }} />
-          <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,76,62,0.95) 40%, rgba(10,76,62,0.2) 100%)' }} />
+          <div className="absolute bottom-0 left-0 right-0 p-5">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(200,150,0,0.9)', color: 'white' }}>
                 👨‍🍳 Resep Hari Ini
               </span>
-              <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-white/80 hover:text-white"
-                style={{ background: 'rgba(255,255,255,0.2)' }}>✕</button>
+              <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>✕</button>
             </div>
             <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>{recipe.name}</h3>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>{recipe.desc}</p>
           </div>
         </div>
-
-        {/* Bahan */}
         <div className="p-5">
           <p className="text-sm font-bold mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
             Pilih bahan yang mau dibeli:
           </p>
           <div className="space-y-2 mb-5">
             {recipe.bahan.map(bahan => (
-              <div key={bahan.nama}
-                onClick={() => toggle(bahan.nama)}
+              <div key={bahan.nama} onClick={() => toggle(bahan.nama)}
                 className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition"
                 style={{
                   border: `1.5px solid ${selected.includes(bahan.nama) ? '#71BC68' : '#e5e7eb'}`,
@@ -187,15 +175,9 @@ function RecipeModal({ recipe, image, onClose, onCheckout }: {
               </div>
             ))}
           </div>
-
-          <button
-            onClick={() => onCheckout(selected)}
-            disabled={selected.length === 0}
+          <button onClick={() => onCheckout(selected)} disabled={selected.length === 0}
             className="w-full py-3 rounded-xl font-bold text-sm transition"
-            style={{
-              background: selected.length === 0 ? '#ccc' : '#0A4C3E',
-              color: selected.length === 0 ? '#999' : '#71BC68',
-            }}>
+            style={{ background: selected.length === 0 ? '#ccc' : '#0A4C3E', color: selected.length === 0 ? '#999' : '#71BC68' }}>
             🛒 Cari {selected.length} Bahan di KiTani
           </button>
         </div>
@@ -242,11 +224,9 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
-
     const { data: existing } = await supabase
       .from('carts').select('id, quantity')
       .eq('user_id', user.id).eq('product_id', productId).single()
-
     if (existing) {
       await supabase.from('carts')
         .update({ quantity: existing.quantity + 1, updated_at: new Date().toISOString() })
@@ -254,7 +234,6 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
     } else {
       await supabase.from('carts').insert({ user_id: user.id, product_id: productId, quantity: 1 })
     }
-
     setAddedId(productId)
     setTimeout(() => setAddedId(null), 1500)
   }
@@ -276,19 +255,34 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
-      {/* ── HEADER SAPAAN ── */}
-      <section className="px-5 pt-5 pb-3 max-w-5xl mx-auto">
+      {/* ── SAPAAN + PESANAN AKTIF BAR (desktop) ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 pt-5 pb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <salamData.Icon size={14} color={salamData.iconColor} />
-              <p className="text-xs font-medium" style={{ color: '#6B7C6A' }}>{salamData.text},</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <salamData.Icon size={13} color={salamData.iconColor} />
+                <p className="text-xs font-medium" style={{ color: '#6B7C6A' }}>{salamData.text}, {firstName}!</p>
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+                Mau beli apa hari ini? 🌿
+              </h1>
             </div>
-            <h1 className="text-xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              {firstName}!
-            </h1>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Pesanan aktif pill — desktop */}
+          {pesananAktif.length > 0 && (
+            <button onClick={() => router.push('/transaksi')}
+              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full transition hover:opacity-90"
+              style={{ background: '#0A4C3E', border: 'none' }}>
+              <Package size={14} color="#71BC68" />
+              <span className="text-xs font-semibold text-white">{pesananAktif.length} pesanan aktif</span>
+              <ArrowRight size={12} color="#71BC68" />
+            </button>
+          )}
+
+          {/* Mobile icons */}
+          <div className="flex md:hidden items-center gap-2">
             <button onClick={() => router.push('/notifikasi')}
               className="relative w-10 h-10 rounded-full flex items-center justify-center"
               style={{ background: 'white', border: '1px solid rgba(113,188,104,0.2)' }}>
@@ -301,91 +295,108 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
               )}
             </button>
             <button onClick={() => router.push('/keranjang')}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center"
+              className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ background: '#0A4C3E' }}>
               <ShoppingCart size={18} color="#71BC68" />
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── SWIPEABLE BANNER ── */}
-      <section className="px-5 mb-5 max-w-5xl mx-auto">
+      {/* ── BANNER FULL WIDTH ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
         <div className="relative overflow-hidden rounded-3xl select-none cursor-pointer"
           onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
           onTouchEnd={e => {
             const diff = touchStartX.current - e.changedTouches[0].clientX
             if (Math.abs(diff) > 50) diff > 0 ? nextBanner() : prevBanner()
-          }}
-          style={{ minHeight: '200px' }}>
+          }}>
 
-          {/* Background gradient */}
-          <div className="absolute inset-0 transition-all duration-500"
-            style={{ background: currentBanner.bg }} />
+          <div className="relative overflow-hidden rounded-3xl" style={{ height: '260px' }}>
+            {/* BG */}
+            <div className="absolute inset-0 transition-all duration-700" style={{ background: currentBanner.bg }} />
 
-          {/* Gambar referensi kanan */}
-          <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
-            <Image
-              src={currentBanner.image}
-              alt={currentBanner.title}
-              fill
-              className="object-cover transition-opacity duration-500"
-              style={{ opacity: 0.35 }}
-            />
-            {/* Gradient overlay agar blend dengan bg */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--banner-bg, #0A4C3E) 0%, transparent 60%)' }} />
-          </div>
+            {/* Gambar — full cover dengan opacity */}
+            <div className="absolute inset-0">
+              <Image src={currentBanner.image} alt={currentBanner.title} fill
+                className="object-cover" style={{ opacity: 0.45 }} priority />
+            </div>
 
-          {/* Decorative circle */}
-          <div className="absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', top: -80, right: 80 }} />
+            {/* Gradient overlay dari kiri — teks kiri selalu terbaca */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(10,60,40,0.97) 0%, rgba(10,60,40,0.92) 35%, rgba(10,60,40,0.55) 60%, rgba(10,60,40,0.1) 100%)' }} />
 
-          {/* Content */}
-          <div className="relative p-6 pr-[45%]">
-            <span className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
-              style={{ background: currentBanner.badgeBg, color: 'white' }}>
-              {currentBanner.badge}
-            </span>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight whitespace-pre-line"
-              style={{ fontFamily: 'Sora, sans-serif' }}>
-              {currentBanner.title}
-            </h2>
-            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>
-              {currentBanner.subtitle}
-            </p>
-            <button
-              onClick={() => handleBannerCta(currentBanner)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition hover:opacity-90"
-              style={{ background: currentBanner.accent, color: '#0A4C3E' }}>
-              {currentBanner.cta} <ArrowRight size={14} />
+            {/* Content — z-10, pakai padding kiri saja, biarkan kanan untuk foto */}
+            <div className="absolute top-0 left-0 bottom-0 flex flex-col justify-center px-8 md:px-14 z-10" style={{ width: '60%' }}>
+              <span className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3 w-fit"
+                style={{ background: currentBanner.badgeBg, color: 'white' }}>
+                {currentBanner.badge}
+              </span>
+              <h2 className="text-2xl md:text-4xl font-bold text-white mb-2 leading-tight whitespace-pre-line"
+                style={{ fontFamily: 'Sora, sans-serif' }}>
+                {currentBanner.title}
+              </h2>
+              <p className="text-xs md:text-sm mb-4" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
+                {currentBanner.subtitle}
+              </p>
+              <button onClick={() => handleBannerCta(currentBanner)}
+                className="flex items-center gap-2 px-5 md:px-7 py-2.5 md:py-3 rounded-full text-sm font-bold transition hover:opacity-90"
+                style={{ background: currentBanner.accent, color: '#0A4C3E', width: 'fit-content' }}>
+                {currentBanner.cta} <ArrowRight size={14} />
+              </button>
+            </div>
+
+            {/* Nav buttons */}
+            <button onClick={prevBanner}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center z-10"
+              style={{ background: 'rgba(0,0,0,0.3)' }}>
+              <ChevronLeft size={18} color="white" />
             </button>
-          </div>
+            <button onClick={nextBanner}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center z-10"
+              style={{ background: 'rgba(0,0,0,0.3)' }}>
+              <ChevronRight size={18} color="white" />
+            </button>
 
-          {/* Prev/Next */}
-          <button onClick={prevBanner}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
-            style={{ background: 'rgba(0,0,0,0.25)' }}>
-            <ChevronLeft size={16} color="white" />
-          </button>
-          <button onClick={nextBanner}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
-            style={{ background: 'rgba(0,0,0,0.25)' }}>
-            <ChevronRight size={16} color="white" />
-          </button>
-
-          {/* Dots */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {BANNERS.map((_, i) => (
-              <button key={i} onClick={() => { setBannerIdx(i); resetAutoPlay() }}
-                className="rounded-full transition-all"
-                style={{ width: i === bannerIdx ? 20 : 6, height: 6, background: i === bannerIdx ? 'white' : 'rgba(255,255,255,0.4)' }} />
-            ))}
+            {/* Dots */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {BANNERS.map((_, i) => (
+                <button key={i} onClick={() => { setBannerIdx(i); resetAutoPlay() }}
+                  className="rounded-full transition-all duration-300"
+                  style={{ width: i === bannerIdx ? 24 : 6, height: 6, background: i === bannerIdx ? 'white' : 'rgba(255,255,255,0.45)' }} />
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── PESANAN AKTIF ── */}
+      {/* ── KEUNGGULAN ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: Leaf, title: 'Organik & Segar', desc: 'Dipanen langsung, tiba 24 jam', color: '#D4EDDA', iconColor: '#155724' },
+            { icon: Truck, title: 'Gratis Ongkir', desc: 'Min. pembelian Rp 75.000', color: '#CCE5FF', iconColor: '#004085' },
+            { icon: ShieldCheck, title: 'Petani Terverifikasi', desc: 'Semua petani sudah diverifikasi', color: '#FFF3CD', iconColor: '#856404' },
+          ].map(item => (
+            <div key={item.title} className="flex items-center gap-3 p-3 md:p-4 bg-white rounded-2xl"
+              style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
+              <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.color }}>
+                <item.icon size={18} color={item.iconColor} />
+              </div>
+              <div className="hidden sm:block">
+                <div className="font-semibold text-sm" style={{ color: '#0A4C3E' }}>{item.title}</div>
+                <div className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>{item.desc}</div>
+              </div>
+              <div className="sm:hidden">
+                <div className="font-semibold text-xs" style={{ color: '#0A4C3E' }}>{item.title}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PESANAN AKTIF (mobile) ── */}
       {pesananAktif.length > 0 && (
-        <section className="px-5 mb-5 max-w-5xl mx-auto">
+        <div className="md:hidden max-w-6xl mx-auto px-4 mb-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-base flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
               <Package size={16} color="#71BC68" /> Pesanan Aktif
@@ -399,7 +410,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
             {pesananAktif.map(order => (
               <div key={order.id}
                 onClick={() => router.push(`/transaksi/${order.id}`)}
-                className="flex items-center justify-between p-4 bg-white rounded-2xl cursor-pointer hover:shadow-sm transition"
+                className="flex items-center justify-between p-4 bg-white rounded-2xl cursor-pointer"
                 style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>#{order.order_number}</p>
@@ -412,12 +423,81 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* ── NOTIFIKASI ── */}
+      {/* ── KATEGORI ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Kategori</h2>
+          <button onClick={() => router.push('/produk')}
+            className="text-sm font-medium flex items-center gap-1 transition hover:gap-2" style={{ color: '#71BC68' }}>
+            Lihat semua <ArrowRight size={14} />
+          </button>
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          {categories.map(cat => (
+            <button key={cat.id}
+              onClick={() => router.push(`/produk?kategori=${cat.slug}`)}
+              className="flex flex-col items-center gap-2 p-3 md:p-5 bg-white rounded-2xl transition hover:-translate-y-1 hover:shadow-md"
+              style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}>
+              <span className="text-3xl md:text-4xl">{CATEGORY_EMOJI[cat.slug] ?? '🥦'}</span>
+              <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>{cat.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FLASH SALE BANNER (desktop strip) ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
+        <div className="rounded-2xl px-6 py-4 flex items-center justify-between"
+          style={{ background: 'linear-gradient(90deg, #0A4C3E, #0d6b55)' }}>
+          <div className="flex items-center gap-3">
+            <Zap size={20} color="#FFD700" fill="#FFD700" />
+            <div>
+              <p className="text-sm font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>Flash Sale Hari Ini</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>Diskon hingga 40% untuk produk pilihan</p>
+            </div>
+          </div>
+          <button onClick={() => router.push('/produk?sort=terlaris')}
+            className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition hover:opacity-90"
+            style={{ background: '#71BC68', color: '#0A4C3E' }}>
+            Lihat Promo <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── REKOMENDASI — desktop: 5 col, mobile: 2 col ── */}
+      {rekomendasi.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              <Star size={18} color="#71BC68" fill="#71BC68" /> Rekomendasi Untukmu
+            </h2>
+            <button onClick={() => router.push('/produk?sort=terlaris')}
+              className="text-sm font-medium flex items-center gap-1 transition hover:gap-2" style={{ color: '#71BC68' }}>
+              Lihat semua <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {rekomendasi.slice(0, 10).map(product => (
+              <div key={product.id} className="relative">
+                {addedId === product.id && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
+                    style={{ background: 'rgba(113,188,104,0.9)' }}>
+                    <span className="text-white font-bold text-sm">✓ Ditambahkan!</span>
+                  </div>
+                )}
+                <ProductCard product={product} onAddToCart={handleAddToCart} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── NOTIFIKASI (mobile) ── */}
       {notifikasi.length > 0 && (
-        <section className="px-5 mb-5 max-w-5xl mx-auto">
+        <div className="md:hidden max-w-6xl mx-auto px-4 mb-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-base flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
               <Bell size={16} color="#71BC68" /> Notifikasi
@@ -441,95 +521,23 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* ── KATEGORI ── */}
-      <section className="px-5 mb-5 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-base" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Kategori</h2>
-          <button onClick={() => router.push('/produk')}
-            className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-            Lihat semua <ArrowRight size={12} />
-          </button>
-        </div>
-        <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-          {categories.map(cat => (
-            <button key={cat.id}
-              onClick={() => router.push(`/produk?kategori=${cat.slug}`)}
-              className="flex flex-col items-center gap-1.5 p-3 bg-white rounded-2xl transition hover:-translate-y-0.5 hover:shadow-sm"
-              style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}>
-              <span className="text-2xl">{CATEGORY_EMOJI[cat.slug] ?? '🥦'}</span>
-              <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>{cat.name}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ── KEUNGGULAN ── */}
-      <section className="px-5 mb-5 max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { icon: Leaf, title: 'Organik & Segar', desc: 'Dipanen langsung, sampai 24 jam', color: '#D4EDDA', iconColor: '#155724' },
-            { icon: Truck, title: 'Gratis Ongkir', desc: 'Min. pembelian Rp 75.000', color: '#CCE5FF', iconColor: '#004085' },
-            { icon: ShieldCheck, title: 'Terverifikasi', desc: 'Semua petani sudah diverifikasi', color: '#FFF3CD', iconColor: '#856404' },
-          ].map(item => (
-            <div key={item.title} className="flex items-center gap-3 p-4 bg-white rounded-2xl"
-              style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.color }}>
-                <item.icon size={18} color={item.iconColor} />
-              </div>
-              <div>
-                <div className="font-semibold text-sm" style={{ color: '#0A4C3E' }}>{item.title}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>{item.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── REKOMENDASI ── */}
-      {rekomendasi.length > 0 && (
-        <section className="px-5 mb-5 max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-base flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              <Star size={16} color="#71BC68" fill="#71BC68" /> Rekomendasi Untukmu
-            </h2>
-            <button onClick={() => router.push('/produk?sort=terlaris')}
-              className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-              Lihat semua <ArrowRight size={12} />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {rekomendasi.map(product => (
-              <div key={product.id} className="relative">
-                {addedId === product.id && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
-                    style={{ background: 'rgba(113,188,104,0.9)' }}>
-                    <span className="text-white font-bold text-sm">✓ Ditambahkan!</span>
-                  </div>
-                )}
-                <ProductCard product={product} onAddToCart={handleAddToCart} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── PRODUK TERBARU ── */}
+      {/* ── PRODUK TERBARU — desktop: 5 col, mobile: 2 col ── */}
       {terbaru.length > 0 && (
-        <section className="px-5 pb-16 max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-base flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              <Clock size={16} color="#71BC68" /> Produk Terbaru
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              <Clock size={18} color="#71BC68" /> Produk Terbaru
             </h2>
             <button onClick={() => router.push('/produk')}
-              className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-              Lihat semua <ArrowRight size={12} />
+              className="text-sm font-medium flex items-center gap-1 transition hover:gap-2" style={{ color: '#71BC68' }}>
+              Lihat semua <ArrowRight size={14} />
             </button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {terbaru.map(product => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {terbaru.slice(0, 10).map(product => (
               <div key={product.id} className="relative">
                 {addedId === product.id && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
@@ -541,10 +549,10 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* ── RECIPE MODAL ── */}
+      {/* RECIPE MODAL */}
       {recipeModal && (
         <RecipeModal
           recipe={recipeModal.recipe}
