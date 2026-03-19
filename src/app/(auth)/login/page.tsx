@@ -26,7 +26,6 @@ export default function LoginPage() {
       return
     }
 
-    // Ambil role lalu redirect sesuai role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -36,7 +35,7 @@ export default function LoginPage() {
     const role = profile?.role
     if (role === 'admin') router.push('/admin/dashboard')
     else if (role === 'petani') router.push('/petani/dashboard')
-    else router.push('/')
+    else router.push('/home') // ← pembeli ke home page baru
 
     router.refresh()
   }
@@ -44,7 +43,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4FAF3] px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold" style={{ fontFamily: 'Sora, sans-serif' }}>
             <span style={{ color: '#0A4C3E' }}>Ki</span>

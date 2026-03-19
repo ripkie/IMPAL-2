@@ -22,7 +22,13 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Belum login → redirect ke /login
-  if (!user && (path.startsWith('/petani') || path.startsWith('/admin') || path.startsWith('/keranjang') || path.startsWith('/transaksi'))) {
+  if (!user && (
+    path.startsWith('/petani') ||
+    path.startsWith('/admin') ||
+    path.startsWith('/keranjang') ||
+    path.startsWith('/transaksi') ||
+    path === '/home'
+  )) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -35,21 +41,30 @@ export async function middleware(request: NextRequest) {
 
     const role = profile?.role
 
-    // Salah role → redirect ke beranda
+    // Salah role → redirect
     if (path.startsWith('/petani') && role !== 'petani')
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/home', request.url))
 
     if (path.startsWith('/admin') && role !== 'admin')
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/home', request.url))
 
-    // Petani belum diverifikasi → redirect ke halaman tunggu
+    // Petani belum diverifikasi → halaman tunggu
     if (path.startsWith('/petani') && role === 'petani' && !profile?.is_verified)
       return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
+
+    // Kalau pembeli akses /home → boleh
+    // Kalau pembeli akses /beranda → tetap boleh (untuk yang belum login juga bisa lihat)
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/petani/:path*', '/admin/:path*', '/keranjang/:path*', '/transaksi/:path*'],
+  matcher: [
+    '/petani/:path*',
+    '/admin/:path*',
+    '/keranjang/:path*',
+    '/transaksi/:path*',
+    '/home',
+  ],
 }
