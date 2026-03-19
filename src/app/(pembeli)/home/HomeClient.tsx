@@ -261,51 +261,32 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
-      {/* ── SAPAAN + PESANAN AKTIF BAR (desktop) ── */}
-      <div className="max-w-6xl mx-auto px-4 md:px-6 pt-5 pb-2">
+      {/* Extra spacer mobile agar tidak tertutup navbar */}
+      <div className="block md:hidden" style={{ height: '8px' }} />
+
+      {/* ── SAPAAN + PESANAN AKTIF BAR ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-5 pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <salamData.Icon size={13} color={salamData.iconColor} />
-                <p className="text-xs font-medium" style={{ color: '#6B7C6A' }}>{salamData.text}, {firstName}!</p>
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-                Mau beli apa hari ini?
-              </h1>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <salamData.Icon size={13} color={salamData.iconColor} />
+              <p className="text-xs font-medium" style={{ color: '#6B7C6A' }}>{salamData.text}, {firstName}!</p>
             </div>
+            <h1 className="text-xl md:text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              Mau beli apa hari ini?
+            </h1>
           </div>
 
-          {/* Pesanan aktif pill — desktop */}
+          {/* Pesanan aktif pill — desktop only */}
           {pesananAktif.length > 0 && (
             <button onClick={() => router.push('/transaksi')}
               className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full transition hover:opacity-90"
-              style={{ background: '#0A4C3E', border: 'none' }}>
+              style={{ background: '#0A4C3E' }}>
               <Package size={14} color="#71BC68" />
               <span className="text-xs font-semibold text-white">{pesananAktif.length} pesanan aktif</span>
               <ArrowRight size={12} color="#71BC68" />
             </button>
           )}
-
-          {/* Mobile icons */}
-          <div className="flex md:hidden items-center gap-2">
-            <button onClick={() => router.push('/notifikasi')}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: 'white', border: '1px solid rgba(113,188,104,0.2)' }}>
-              <Bell size={18} color="#0A4C3E" />
-              {notifikasi.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-white flex items-center justify-center"
-                  style={{ background: '#71BC68', fontSize: '9px', fontWeight: 700, border: '2px solid #F4FAF3' }}>
-                  {notifikasi.length > 9 ? '9+' : notifikasi.length}
-                </span>
-              )}
-            </button>
-            <button onClick={() => router.push('/keranjang')}
-              className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: '#0A4C3E' }}>
-              <ShoppingCart size={18} color="#71BC68" />
-            </button>
-          </div>
         </div>
       </div>
 
