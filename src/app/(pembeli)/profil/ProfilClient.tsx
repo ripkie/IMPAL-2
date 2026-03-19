@@ -137,20 +137,16 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
 
           {/* Avatar */}
           <div className="flex flex-col items-center">
-            <div className="relative mb-3">
-              <div className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center text-2xl font-bold"
-                style={{ background: '#71BC68', color: '#0A4C3E', minWidth: 80, maxWidth: 80, minHeight: 80, maxHeight: 80 }}>
+            <div style={{ position: 'relative', width: 80, height: 80, marginBottom: 12 }}>
+              <div style={{ width: 80, height: 80, borderRadius: 20, overflow: 'hidden', background: '#71BC68', color: '#0A4C3E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700 }}>
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Avatar"
                     style={{ width: 80, height: 80, objectFit: 'cover', display: 'block' }} />
                 ) : initials}
               </div>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
-                style={{ background: uploadingAvatar ? '#ccc' : '#71BC68', border: '2px solid #0d6b55' }}>
-                {uploadingAvatar
-                  ? <Loader size={13} color="#0A4C3E" />
-                  : <Camera size={13} color="#0A4C3E" />}
+                style={{ position: 'absolute', bottom: -4, right: -4, width: 28, height: 28, borderRadius: '50%', background: uploadingAvatar ? '#ccc' : '#71BC68', border: '2px solid #0d6b55', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                {uploadingAvatar ? <Loader size={13} color="#0A4C3E" /> : <Camera size={13} color="#0A4C3E" />}
               </button>
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
                 className="hidden" onChange={handleAvatarChange} />
