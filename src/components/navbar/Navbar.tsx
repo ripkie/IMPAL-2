@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { ShoppingCart, Bell, Search, User, Menu, X, Home, ShoppingBag, ClipboardList, LogOut } from 'lucide-react'
+import {
+  ShoppingCart, Bell, Search, User, Menu, X,
+  Home, ShoppingBag, ClipboardList, LogOut, Sprout
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 
@@ -15,7 +18,6 @@ export default function Navbar() {
   const [cartCount, setCartCount] = useState(0)
   const [notifCount, setNotifCount] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
@@ -58,19 +60,26 @@ export default function Navbar() {
     e.preventDefault()
     if (searchQuery.trim()) {
       router.push(`/produk?q=${encodeURIComponent(searchQuery)}`)
-      setSearchOpen(false)
+      setMenuOpen(false)
     }
   }
 
+  // Logo href sesuai role
+  function getLogoHref() {
+    if (!profile) return '/beranda'
+    if (profile.role === 'petani') return '/petani/dashboard'
+    if (profile.role === 'admin') return '/admin/dashboard'
+    return '/home'
+  }
+
   const navLinks = [
-    { href: '/', label: 'Beranda', icon: Home },
+    { href: '/home', label: 'Beranda', icon: Home },
     { href: '/produk', label: 'Produk', icon: ShoppingBag },
     { href: '/transaksi', label: 'Transaksi', icon: ClipboardList },
   ]
 
   return (
     <>
-      {/* Spacer agar konten tidak tertutup navbar */}
       <div className="h-[72px]" />
 
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
@@ -85,10 +94,12 @@ export default function Navbar() {
             boxShadow: scrolled ? '0 4px 32px rgba(10,76,62,0.25)' : 'none',
           }}
         >
-          {/* Logo */}
-          <Link href="/" className="font-bold text-lg shrink-0"
-            style={{ fontFamily: 'Sora, sans-serif', color: '#71BC68', letterSpacing: '-0.5px' }}>
-            Ki<span style={{ color: 'white' }}>Tani</span>
+          {/* Logo → redirect sesuai role */}
+          <Link href={getLogoHref()}
+            className="flex items-center gap-1.5 font-bold text-lg shrink-0"
+            style={{ fontFamily: 'Sora, sans-serif', letterSpacing: '-0.5px' }}>
+            <Sprout size={20} color="#71BC68" />
+            <span style={{ color: '#71BC68' }}>Ki</span><span style={{ color: 'white' }}>Tani</span>
           </Link>
 
           {/* Search Bar */}
@@ -103,7 +114,7 @@ export default function Navbar() {
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Cari sayuran, petani..."
                   className="bg-transparent border-none outline-none text-white text-sm w-full"
-                  style={{ '::placeholder': { color: 'rgba(255,255,255,0.4)' } } as React.CSSProperties}
+                  style={{ color: 'white' }}
                 />
               </div>
             </form>
@@ -126,7 +137,6 @@ export default function Navbar() {
 
           {/* Icons */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Notif */}
             <Link href="/notifikasi" className="relative p-2 rounded-full transition hover:bg-white/10">
               <Bell size={18} color="rgba(255,255,255,0.8)" />
               {notifCount > 0 && (
@@ -137,7 +147,6 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Cart */}
             <Link href="/keranjang" className="relative p-2 rounded-full transition hover:bg-white/10">
               <ShoppingCart size={18} color="rgba(255,255,255,0.8)" />
               {cartCount > 0 && (
@@ -148,7 +157,6 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Profile / Login */}
             {profile ? (
               <div className="relative group">
                 <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full transition hover:bg-white/10">
@@ -160,7 +168,6 @@ export default function Navbar() {
                     {profile.full_name?.split(' ')[0]}
                   </span>
                 </button>
-                {/* Dropdown */}
                 <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
                   style={{ background: 'white', border: '1px solid rgba(113,188,104,0.2)', boxShadow: '0 8px 32px rgba(10,76,62,0.15)' }}>
                   <Link href="/profil" className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#F4FAF3] transition"
@@ -171,13 +178,15 @@ export default function Navbar() {
                   {profile.role === 'petani' && (
                     <Link href="/petani/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#F4FAF3] transition border-t border-gray-100"
                       style={{ color: '#0A4C3E', fontFamily: 'DM Sans, sans-serif' }}>
-                      🌾 Dasbor Petani
+                      <Sprout size={15} color="#71BC68" />
+                      Dasbor Petani
                     </Link>
                   )}
                   {profile.role === 'admin' && (
                     <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#F4FAF3] transition border-t border-gray-100"
                       style={{ color: '#0A4C3E', fontFamily: 'DM Sans, sans-serif' }}>
-                      🛡️ Panel Admin
+                      <User size={15} />
+                      Panel Admin
                     </Link>
                   )}
                   <button onClick={handleLogout}
@@ -196,7 +205,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Mobile menu toggle */}
             <button className="md:hidden p-2 rounded-full transition hover:bg-white/10"
               onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X size={18} color="white" /> : <Menu size={18} color="white" />}
