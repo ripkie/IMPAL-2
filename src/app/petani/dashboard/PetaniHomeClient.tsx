@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import {
   Package, ShoppingBag, Bell, TrendingUp, AlertTriangle,
-  ArrowRight, Plus, ClipboardList, LogOut
+  ArrowRight, Plus, ClipboardList, LogOut, Sprout
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Notification } from '@/types'
@@ -14,7 +14,7 @@ interface Order {
   quantity: number
   subtotal: number
   created_at: string
-  orders: { id: string; order_number: string; status: string } | null
+  orders: { id: string; order_number: string; status: string; buyer_id: string } | null
 }
 
 interface StokItem {

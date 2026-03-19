@@ -21,8 +21,8 @@ export default async function PetaniDashboardPage() {
     .eq('farmer_id', user.id)
     .eq('is_active', true)
 
-  // Pesanan masuk (pending/paid/processing)
-  const { data: pesananMasuk } = await supabase
+  // Pesanan masuk
+  const { data: pesananMasukRaw } = await supabase
     .from('order_items')
     .select(`
       id, product_name, quantity, subtotal, created_at,
@@ -32,6 +32,12 @@ export default async function PetaniDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  // Flatten orders array → object (Supabase returns joined relation as array)
+  const pesananMasuk = (pesananMasukRaw ?? []).map((item: any) => ({
+    ...item,
+    orders: Array.isArray(item.orders) ? (item.orders[0] ?? null) : item.orders
+  }))
+
   // Total pendapatan (pesanan done)
   const { data: pendapatanData } = await supabase
     .from('order_items')
@@ -39,7 +45,10 @@ export default async function PetaniDashboardPage() {
     .eq('farmer_id', user.id)
 
   const totalPendapatan = (pendapatanData ?? [])
-    .filter((item: any) => item.orders?.status === 'done')
+    .filter((item: any) => {
+      const o = Array.isArray(item.orders) ? item.orders[0] : item.orders
+      return o?.status === 'done'
+    })
     .reduce((sum: number, item: any) => sum + (item.subtotal ?? 0), 0)
 
   // Notifikasi
@@ -66,7 +75,7 @@ export default async function PetaniDashboardPage() {
       profile={profile}
       totalProduk={totalProduk ?? 0}
       totalPendapatan={totalPendapatan}
-      pesananMasuk={pesananMasuk ?? []}
+      pesananMasuk={pesananMasuk}
       notifikasi={notifikasi ?? []}
       stokMenipis={stokMenipis ?? []}
     />
