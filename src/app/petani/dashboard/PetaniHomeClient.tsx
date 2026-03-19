@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import {
   Package, ShoppingBag, Bell, TrendingUp, AlertTriangle,
-  ArrowRight, Plus, ClipboardList, LogOut, Sprout
+  ArrowRight, Plus, ClipboardList, LogOut, Sprout, Inbox
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Notification } from '@/types'
@@ -35,9 +35,9 @@ interface Props {
 
 const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
-  paid: { label: 'Dibayar ✓', color: '#155724', bg: '#D4EDDA' },
+  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
   processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped: { label: 'Dikirim 🚚', color: '#0A4C3E', bg: '#D4EDDA' },
+  shipped: { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
   done: { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
 }
 
@@ -87,7 +87,7 @@ export default function PetaniHomeClient({
           </div>
 
           <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>
-            {firstName} 🌾
+            {firstName}
           </h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Selamat datang di dasbor petani KiTani
@@ -185,7 +185,7 @@ export default function PetaniHomeClient({
 
         {pesananMasuk.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-2xl" style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="text-4xl mb-3">📭</div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "#F4FAF3" }}><Inbox size={24} color="#6B7C6A" /></div>
             <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Belum ada pesanan</p>
             <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>Pesanan baru akan muncul di sini</p>
           </div>

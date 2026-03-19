@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, Star } from 'lucide-react'
+import { ShoppingCart, Leaf, Cherry, Carrot, Flower2, Bean, Sprout, Check } from 'lucide-react'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -10,25 +10,24 @@ interface ProductCardProps {
   onAddToCart?: (productId: string) => void
 }
 
-const EMOJI_MAP: Record<string, string> = {
-  'sayuran-hijau': '🥬',
-  'buah-beri': '🍅',
-  'umbi-umbian': '🥕',
-  'herbal-rempah': '🌿',
-  'kacang-kacangan': '🫘',
-  'lainnya': '🥦',
+const CATEGORY_ICON: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  'sayuran-hijau':  { icon: Leaf,    color: '#155724', bg: '#D4EDDA' },
+  'buah-beri':      { icon: Cherry,  color: '#842029', bg: '#F8D7DA' },
+  'umbi-umbian':    { icon: Carrot,  color: '#7B3F00', bg: '#FFE8CC' },
+  'herbal-rempah':  { icon: Flower2, color: '#3D6B35', bg: '#D4EDDA' },
+  'kacang-kacangan':{ icon: Bean,    color: '#5C4033', bg: '#EDD9C8' },
+  'lainnya':        { icon: Sprout,  color: '#0A4C3E', bg: '#F4FAF3' },
 }
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
-  const emoji = EMOJI_MAP[product.categories?.slug ?? 'lainnya'] ?? '🥦'
+  const cfg = CATEGORY_ICON[product.categories?.slug ?? 'lainnya'] ?? CATEGORY_ICON['lainnya']
+  const IconComp = cfg.icon
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-1"
       style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 2px 8px rgba(10,76,62,0.04)' }}>
       <Link href={`/produk/${product.id}`}>
-        {/* Image */}
-        <div className="relative overflow-hidden"
-          style={{ height: '140px', background: '#F4FAF3' }}>
+        <div className="relative overflow-hidden" style={{ height: '140px', background: '#F4FAF3' }}>
           {product.image_urls?.length > 0 ? (
             <Image
               src={product.image_urls[0]}
@@ -37,8 +36,10 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-5xl">
-              {emoji}
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: cfg.bg }}>
+                <IconComp size={32} color={cfg.color} />
+              </div>
             </div>
           )}
           {product.stock <= 5 && product.stock > 0 && (
@@ -55,7 +56,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         </div>
       </Link>
 
-      {/* Info */}
       <div className="p-3">
         <Link href={`/produk/${product.id}`}>
           <h3 className="font-semibold text-sm mb-0.5 line-clamp-1 hover:text-[#71BC68] transition-colors"
@@ -67,7 +67,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           {product.profiles?.full_name ?? 'Petani KiTani'}
         </p>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <div>
             <span className="font-bold text-sm" style={{ color: '#71BC68', fontFamily: 'Sora, sans-serif' }}>
               Rp {product.price.toLocaleString('id-ID')}
@@ -79,13 +79,12 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         <button
           onClick={() => onAddToCart?.(product.id)}
           disabled={product.stock === 0}
-          className="w-full mt-2 py-2 rounded-xl text-xs font-bold transition-all duration-200"
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all duration-200"
           style={{
             background: product.stock === 0 ? '#f0f0f0' : '#0A4C3E',
             color: product.stock === 0 ? '#999' : '#71BC68',
-            fontFamily: 'DM Sans, sans-serif',
           }}>
-          {product.stock === 0 ? 'Stok Habis' : '+ Keranjang'}
+          {product.stock === 0 ? 'Stok Habis' : <><ShoppingCart size={12} /> Keranjang</>}
         </button>
       </div>
     </div>

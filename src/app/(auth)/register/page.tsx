@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ShoppingCart, Sprout, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Role = 'pembeli' | 'petani'
@@ -27,13 +28,10 @@ export default function RegisterPage() {
 
     const supabase = createClient()
 
-    // 1. Buat akun auth
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName, role }
-      }
+      options: { data: { full_name: fullName, role } }
     })
 
     if (authError || !data.user) {
@@ -42,10 +40,8 @@ export default function RegisterPage() {
       return
     }
 
-    // 2. Update profile tambahan
     await supabase.from('profiles').update({ phone }).eq('id', data.user.id)
 
-    // 3. Kalau petani, buat farmer_profile
     if (role === 'petani') {
       await supabase.from('farmer_profiles').insert({
         user_id: data.user.id,
@@ -55,7 +51,6 @@ export default function RegisterPage() {
       })
     }
 
-    // Redirect
     if (role === 'petani') router.push('/petani/menunggu-verifikasi')
     else router.push('/')
     router.refresh()
@@ -64,7 +59,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4FAF3] px-4 py-10">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold" style={{ fontFamily: 'Sora, sans-serif' }}>
             <span style={{ color: '#0A4C3E' }}>Ki</span>
@@ -85,7 +79,6 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* STEP 1: Pilih Role */}
           {step === 1 && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -95,9 +88,11 @@ export default function RegisterPage() {
                   style={{
                     borderColor: role === 'pembeli' ? '#71BC68' : '#e5e7eb',
                     background: role === 'pembeli' ? '#F4FAF3' : 'white'
-                  }}
-                >
-                  <div className="text-2xl mb-2">🛒</div>
+                  }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+                    style={{ background: role === 'pembeli' ? '#D4EDDA' : '#f5f5f5' }}>
+                    <ShoppingCart size={20} color={role === 'pembeli' ? '#155724' : '#999'} />
+                  </div>
                   <div className="font-semibold text-sm text-[#0A4C3E]">Pembeli</div>
                   <div className="text-xs text-gray-500 mt-1">Beli sayuran segar</div>
                 </button>
@@ -107,82 +102,59 @@ export default function RegisterPage() {
                   style={{
                     borderColor: role === 'petani' ? '#71BC68' : '#e5e7eb',
                     background: role === 'petani' ? '#F4FAF3' : 'white'
-                  }}
-                >
-                  <div className="text-2xl mb-2">🌾</div>
+                  }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+                    style={{ background: role === 'petani' ? '#D4EDDA' : '#f5f5f5' }}>
+                    <Sprout size={20} color={role === 'petani' ? '#155724' : '#999'} />
+                  </div>
                   <div className="font-semibold text-sm text-[#0A4C3E]">Petani</div>
                   <div className="text-xs text-gray-500 mt-1">Jual hasil panen</div>
                 </button>
               </div>
 
               {role === 'petani' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-xs text-yellow-700">
-                  ⚠ Akun petani perlu verifikasi admin sebelum bisa berjualan.
+                <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-xs text-yellow-700">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  Akun petani perlu verifikasi admin sebelum bisa berjualan.
                 </div>
               )}
 
               <button
                 onClick={() => setStep(2)}
-                className="w-full py-3 rounded-xl font-bold text-sm"
-                style={{ background: '#0A4C3E', color: '#71BC68' }}
-              >
-                Lanjut →
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
+                style={{ background: '#0A4C3E', color: '#71BC68' }}>
+                Lanjut <ArrowRight size={16} />
               </button>
             </div>
           )}
 
-          {/* STEP 2: Isi Data */}
           {step === 2 && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#0A4C3E] mb-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  required
-                  placeholder="Nama lengkap kamu"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                />
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+                  required placeholder="Nama lengkap kamu"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-[#0A4C3E] mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  placeholder="email@contoh.com"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  required placeholder="email@contoh.com"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-[#0A4C3E] mb-1">No. HP</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                   placeholder="08xxxxxxxxxx"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                />
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-[#0A4C3E] mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  placeholder="Minimal 6 karakter"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  required minLength={6} placeholder="Minimal 6 karakter"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
               </div>
 
-              {/* Extra fields for petani */}
               {role === 'petani' && (
                 <>
                   <div className="border-t border-gray-100 pt-4">
@@ -190,43 +162,27 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#0A4C3E] mb-1">Nama Usaha / Kebun</label>
-                    <input
-                      type="text"
-                      value={farmName}
-                      onChange={e => setFarmName(e.target.value)}
-                      required
-                      placeholder="Contoh: Kebun Pak Sunaryo"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                    />
+                    <input type="text" value={farmName} onChange={e => setFarmName(e.target.value)}
+                      required placeholder="Contoh: Kebun Pak Sunaryo"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#0A4C3E] mb-1">Lokasi Pertanian</label>
-                    <input
-                      type="text"
-                      value={farmLocation}
-                      onChange={e => setFarmLocation(e.target.value)}
-                      required
-                      placeholder="Contoh: Malang, Jawa Timur"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition"
-                    />
+                    <input type="text" value={farmLocation} onChange={e => setFarmLocation(e.target.value)}
+                      required placeholder="Contoh: Malang, Jawa Timur"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#71BC68] focus:ring-1 focus:ring-[#71BC68] transition" />
                   </div>
                 </>
               )}
 
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm border border-gray-200 text-gray-500"
-                >
-                  ← Kembali
+                <button type="button" onClick={() => setStep(1)}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm border border-gray-200 text-gray-500">
+                  <ArrowLeft size={16} /> Kembali
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
+                <button type="submit" disabled={loading}
                   className="flex-1 py-3 rounded-xl font-bold text-sm transition"
-                  style={{ background: loading ? '#ccc' : '#0A4C3E', color: '#71BC68' }}
-                >
+                  style={{ background: loading ? '#ccc' : '#0A4C3E', color: '#71BC68' }}>
                   {loading ? 'Memproses...' : 'Daftar'}
                 </button>
               </div>

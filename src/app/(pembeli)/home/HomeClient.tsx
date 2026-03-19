@@ -6,7 +6,8 @@ import Image from 'next/image'
 import {
   ArrowRight, Bell, ShoppingCart, Package, ChevronLeft,
   ChevronRight, Leaf, Truck, ShieldCheck, Star, Clock,
-  Sunrise, Sun, Sunset, Moon, UtensilsCrossed, Zap
+  Sunrise, Sun, Sunset, Moon, UtensilsCrossed, Zap,
+  Check, X, Cherry, Carrot, Flower2, Bean, Sprout
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ProductCard from '@/components/ui/ProductCard'
@@ -34,7 +35,7 @@ const BANNERS = [
     id: 'promo1',
     type: 'promo',
     bg: 'linear-gradient(120deg, #0A4C3E 0%, #0d6b55 60%, #1a8a6a 100%)',
-    badge: '🔥 Flash Sale',
+    badge: 'Flash Sale',
     badgeBg: 'rgba(220,53,69,0.95)',
     title: 'Diskon 30%\nSayuran Hijau',
     subtitle: 'Promo hari ini s/d pukul 23.59. Stok terbatas!',
@@ -47,7 +48,7 @@ const BANNERS = [
     id: 'promo2',
     type: 'promo',
     bg: 'linear-gradient(120deg, #1a6b3a 0%, #2d9e5a 60%, #3dbf70 100%)',
-    badge: '🚚 Gratis Ongkir',
+    badge: 'Gratis Ongkir',
     badgeBg: 'rgba(45,158,90,0.95)',
     title: 'Gratis Ongkir\nMin. Rp 75.000',
     subtitle: 'Berlaku untuk semua wilayah Indonesia. Pesan sekarang!',
@@ -60,7 +61,7 @@ const BANNERS = [
     id: 'resep1',
     type: 'resep',
     bg: 'linear-gradient(120deg, #2C5F2E 0%, #4a8c4c 60%, #5fa860 100%)',
-    badge: '👨‍🍳 Resep Hari Ini',
+    badge: 'Resep Hari Ini',
     badgeBg: 'rgba(200,150,0,0.95)',
     title: 'Sayur Lodeh\nSegar & Gurih',
     subtitle: 'Masak sendiri di rumah dengan bahan organik segar dari KiTani',
@@ -85,7 +86,7 @@ const BANNERS = [
     id: 'resep2',
     type: 'resep',
     bg: 'linear-gradient(120deg, #1B4332 0%, #40916C 60%, #52b788 100%)',
-    badge: '🥗 Resep Sehat',
+    badge: 'Resep Sehat',
     badgeBg: 'rgba(64,145,108,0.95)',
     title: 'Tumis Kangkung\nBawang Putih',
     subtitle: 'Sehat, cepat, dan lezat. Cocok untuk makan siang!',
@@ -113,9 +114,14 @@ const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }>
   shipped: { label: 'Dikirim 🚚', color: '#0A4C3E', bg: '#D4EDDA' },
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  'sayuran-hijau': '🥬', 'buah-beri': '🍅', 'umbi-umbian': '🥕',
-  'herbal-rempah': '🌿', 'kacang-kacangan': '🫘', 'lainnya': '🥦',
+
+const CATEGORY_ICON: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  'sayuran-hijau': { icon: Leaf, color: '#155724', bg: '#D4EDDA' },
+  'buah-beri': { icon: Cherry, color: '#842029', bg: '#F8D7DA' },
+  'umbi-umbian': { icon: Carrot, color: '#7B3F00', bg: '#FFE8CC' },
+  'herbal-rempah': { icon: Flower2, color: '#3D6B35', bg: '#D4EDDA' },
+  'kacang-kacangan': { icon: Bean, color: '#5C4033', bg: '#EDD9C8' },
+  'lainnya': { icon: Sprout, color: '#0A4C3E', bg: '#F4FAF3' },
 }
 
 // ── RECIPE MODAL ─────────────────────────────────────────────
@@ -145,7 +151,7 @@ function RecipeModal({ recipe, image, onClose, onCheckout }: {
                 👨‍🍳 Resep Hari Ini
               </span>
               <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>✕</button>
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}><X size={14} /></button>
             </div>
             <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>{recipe.name}</h3>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>{recipe.desc}</p>
@@ -165,7 +171,7 @@ function RecipeModal({ recipe, image, onClose, onCheckout }: {
                 }}>
                 <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
                   style={{ background: selected.includes(bahan.nama) ? '#71BC68' : '#e5e7eb' }}>
-                  {selected.includes(bahan.nama) && <span className="text-white text-xs font-bold">✓</span>}
+                  {selected.includes(bahan.nama) && <Check size={12} color="white" strokeWidth={3} />}
                 </div>
                 <div className="flex-1">
                   <span className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>{bahan.nama}</span>
@@ -265,7 +271,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
                 <p className="text-xs font-medium" style={{ color: '#6B7C6A' }}>{salamData.text}, {firstName}!</p>
               </div>
               <h1 className="text-xl md:text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-                Mau beli apa hari ini? 🌿
+                Mau beli apa hari ini?
               </h1>
             </div>
           </div>
@@ -436,15 +442,21 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
           </button>
         </div>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {categories.map(cat => (
-            <button key={cat.id}
-              onClick={() => router.push(`/produk?kategori=${cat.slug}`)}
-              className="flex flex-col items-center gap-2 p-3 md:p-5 bg-white rounded-2xl transition hover:-translate-y-1 hover:shadow-md"
-              style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}>
-              <span className="text-3xl md:text-4xl">{CATEGORY_EMOJI[cat.slug] ?? '🥦'}</span>
-              <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>{cat.name}</span>
-            </button>
-          ))}
+          {categories.map(cat => {
+            const cfg = CATEGORY_ICON[cat.slug] ?? CATEGORY_ICON['lainnya']
+            const IconComp = cfg.icon
+            return (
+              <button key={cat.id}
+                onClick={() => router.push(`/produk?kategori=${cat.slug}`)}
+                className="flex flex-col items-center gap-2 p-3 md:p-5 bg-white rounded-2xl transition hover:-translate-y-1 hover:shadow-md"
+                style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: cfg.bg }}>
+                  <IconComp size={22} color={cfg.color} />
+                </div>
+                <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>{cat.name}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -485,7 +497,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
                 {addedId === product.id && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
                     style={{ background: 'rgba(113,188,104,0.9)' }}>
-                    <span className="text-white font-bold text-sm">✓ Ditambahkan!</span>
+                    <span className="text-white font-bold text-sm flex items-center gap-1"><Check size={16} strokeWidth={3} /> Ditambahkan!</span>
                   </div>
                 )}
                 <ProductCard product={product} onAddToCart={handleAddToCart} />
@@ -542,7 +554,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
                 {addedId === product.id && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
                     style={{ background: 'rgba(113,188,104,0.9)' }}>
-                    <span className="text-white font-bold text-sm">✓ Ditambahkan!</span>
+                    <span className="text-white font-bold text-sm flex items-center gap-1"><Check size={16} strokeWidth={3} /> Ditambahkan!</span>
                   </div>
                 )}
                 <ProductCard product={product} onAddToCart={handleAddToCart} />
