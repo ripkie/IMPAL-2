@@ -7,7 +7,7 @@ export default async function KeranjangPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: cartItems } = await supabase
+  const { data: cartRaw } = await supabase
     .from('carts')
     .select(`
       id, quantity, updated_at,
@@ -19,5 +19,11 @@ export default async function KeranjangPage() {
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
 
-  return <KeranjangClient cartItems={cartItems ?? []} userId={user.id} />
+  // Flatten products array (Supabase returns array for joins)
+  const cartItems = (cartRaw ?? []).map((item: any) => ({
+    ...item,
+    products: Array.isArray(item.products) ? item.products[0] ?? null : item.products,
+  }))
+
+  return <KeranjangClient cartItems={cartItems} userId={user.id} />
 }
