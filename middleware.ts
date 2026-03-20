@@ -21,50 +21,69 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  // Belum login → redirect ke /login
-  if (!user && (
-    path.startsWith('/petani') ||
-    path.startsWith('/admin') ||
-    path.startsWith('/keranjang') ||
-    path.startsWith('/transaksi') ||
-    path === '/home'
-  )) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // /admin/login bebas diakses siapapun
+  if (path === '/admin/login') {
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'admin')
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    }
+    return supabaseResponse
   }
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, is_verified')
-      .eq('id', user.id)
-      .single()
+  // Halaman tunggu verifikasi bebas diakses
+  if (path === '/petani/menunggu-verifikasi') return supabaseResponse
 
-    const role = profile?.role
-
-    // Salah role → redirect
-    if (path.startsWith('/petani') && role !== 'petani')
-      return NextResponse.redirect(new URL('/home', request.url))
-
-    if (path.startsWith('/admin') && role !== 'admin')
-      return NextResponse.redirect(new URL('/home', request.url))
-
-    // Petani belum diverifikasi → halaman tunggu
-    if (path.startsWith('/petani') && role === 'petani' && !profile?.is_verified)
-      return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
-
-    // Kalau pembeli akses /home → boleh
-    // Kalau pembeli akses /beranda → tetap boleh (untuk yang belum login juga bisa lihat)
+  // Belum login
+  if (!user) {
+    if (path.startsWith('/admin'))
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    if (
+      path.startsWith('/petani') ||
+      path.startsWith('/keranjang') ||
+      path.startsWith('/transaksi') ||
+      path === '/home' ||
+      path === '/profil'
+    )
+      return NextResponse.redirect(new URL('/login', request.url))
+    return supabaseResponse
   }
+
+  // Sudah login → cek role
+  const { data: profile } = await supabase
+    .from('profiles').select('role, is_verified').eq('id', user.id).single()
+  const role = profile?.role
+
+  // Admin hanya boleh akses /admin/*
+  if (role === 'admin') {
+    if (!path.startsWith('/admin'))
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    return supabaseResponse
+  }
+
+  // Non-petani tidak boleh akses /petani/*
+  if (path.startsWith('/petani') && role !== 'petani')
+    return NextResponse.redirect(new URL('/home', request.url))
+
+  // Petani belum diverifikasi → halaman tunggu
+  if (path.startsWith('/petani') && role === 'petani' && !profile?.is_verified)
+    return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
+
+  // Non-admin tidak boleh akses /admin/*
+  if (path.startsWith('/admin'))
+    return NextResponse.redirect(new URL('/home', request.url))
 
   return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    '/petani/:path*',
     '/admin/:path*',
+    '/petani/:path*',
     '/keranjang/:path*',
     '/transaksi/:path*',
     '/home',
+    '/profil',
   ],
 }

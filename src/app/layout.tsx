@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', margin: 0 }}>
         <NavbarWrapper />
-        <main>{children}</main>
+        {children}
       </body>
     </html>
   )

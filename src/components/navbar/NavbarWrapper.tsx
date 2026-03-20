@@ -6,8 +6,8 @@ import Navbar from './Navbar'
 const HIDE_NAVBAR_PATHS = [
   '/login',
   '/register',
-  '/petani/menunggu-verifikasi',
-  '/admin/login',
+  '/admin',
+  '/petani',
 ]
 
 export default function NavbarWrapper() {
