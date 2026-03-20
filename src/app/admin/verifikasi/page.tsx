@@ -14,7 +14,7 @@ export default async function VerifikasiPage() {
   const { data: petaniRaw, error } = await supabase
     .from('farmer_profiles')
     .select(`
-      id, farm_name, farm_location, farm_size,
+      id, user_id, farm_name, farm_location, farm_size,
       ktp_url, cert_url, verify_status, reject_reason,
       created_at, verified_at,
       profiles!farmer_profiles_user_id_fkey(id, full_name, phone)

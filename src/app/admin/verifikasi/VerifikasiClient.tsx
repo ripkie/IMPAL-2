@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Petani {
   id: string
+  user_id: string
   farm_name: string
   farm_location: string
   farm_size: string | null
@@ -304,7 +305,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                       {p.verify_status === 'pending' && (
                         <>
                           <button
-                            onClick={() => handleApprove(p.id, p.profiles?.id ?? '')}
+                            onClick={() => handleApprove(p.id, p.user_id)}
                             disabled={loading === p.id}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition hover:opacity-90"
                             style={{ background: '#0A4C3E', color: '#71BC68' }}>
@@ -331,7 +332,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                       )}
                       {p.verify_status === 'rejected' && (
                         <button
-                          onClick={() => handleApprove(p.id, p.profiles?.id ?? '')}
+                          onClick={() => handleApprove(p.id, p.user_id)}
                           disabled={loading === p.id}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition hover:opacity-80"
                           style={{ background: '#D4EDDA', color: '#155724' }}>
