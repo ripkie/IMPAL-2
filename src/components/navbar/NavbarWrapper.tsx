@@ -3,8 +3,12 @@
 import { usePathname } from 'next/navigation'
 import Navbar from './Navbar'
 
-// Halaman yang tidak pakai Navbar
-const HIDE_NAVBAR_PATHS = ['/login', '/register', '/petani/menunggu-verifikasi']
+const HIDE_NAVBAR_PATHS = [
+  '/login',
+  '/register',
+  '/petani/menunggu-verifikasi',
+  '/admin/login',
+]
 
 export default function NavbarWrapper() {
   const pathname = usePathname()
