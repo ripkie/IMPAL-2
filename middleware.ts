@@ -35,24 +35,8 @@ export async function middleware(request: NextRequest) {
   // Halaman tunggu verifikasi bebas diakses
   if (path === '/petani/menunggu-verifikasi') return supabaseResponse
 
-  // Root path & beranda → redirect sesuai role kalau sudah login
-  if (path === '/' || path === '/beranda') {
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles').select('role, is_verified').eq('id', user.id).single()
-      const role = profile?.role
-      if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-      if (role === 'petani') {
-        if (!profile?.is_verified) return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
-        return NextResponse.redirect(new URL('/petani/dashboard', request.url))
-      }
-      return NextResponse.redirect(new URL('/home', request.url))
-    }
-    return supabaseResponse
-  }
-
-  // /login → redirect sesuai role kalau sudah login
-  if (path === '/login') {
+  // Root path & beranda & login → redirect sesuai role kalau sudah login
+  if (path === '/' || path === '/beranda' || path === '/login') {
     if (user) {
       const { data: profile } = await supabase
         .from('profiles').select('role, is_verified').eq('id', user.id).single()
@@ -76,7 +60,8 @@ export async function middleware(request: NextRequest) {
       path.startsWith('/keranjang') ||
       path.startsWith('/transaksi') ||
       path === '/home' ||
-      path === '/profil'
+      path === '/profil' ||
+      path.startsWith('/produk')
     )
       return NextResponse.redirect(new URL('/login', request.url))
     return supabaseResponse
@@ -94,15 +79,21 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Non-petani tidak boleh akses /petani/*
-  if (path.startsWith('/petani') && role !== 'petani')
+  // Petani hanya boleh akses /petani/* — tidak boleh ke halaman pembeli
+  if (role === 'petani') {
+    if (path === '/home' || path === '/profil' ||
+        path.startsWith('/keranjang') || path.startsWith('/transaksi') ||
+        path.startsWith('/produk')) {
+      return NextResponse.redirect(new URL('/petani/dashboard', request.url))
+    }
+    if (path.startsWith('/petani') && !profile?.is_verified)
+      return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
+    return supabaseResponse
+  }
+
+  // Pembeli tidak boleh akses /petani/* atau /admin/*
+  if (path.startsWith('/petani'))
     return NextResponse.redirect(new URL('/home', request.url))
-
-  // Petani belum diverifikasi → halaman tunggu
-  if (path.startsWith('/petani') && role === 'petani' && !profile?.is_verified)
-    return NextResponse.redirect(new URL('/petani/menunggu-verifikasi', request.url))
-
-  // Non-admin tidak boleh akses /admin/*
   if (path.startsWith('/admin'))
     return NextResponse.redirect(new URL('/home', request.url))
 
@@ -118,6 +109,7 @@ export const config = {
     '/petani/:path*',
     '/keranjang/:path*',
     '/transaksi/:path*',
+    '/produk/:path*',
     '/home',
     '/profil',
   ],

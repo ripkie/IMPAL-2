@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, Package, ShoppingBag, LogOut, Sprout } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, LogOut, Sprout, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const navLinks = [
   { href: '/petani/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/petani/produk', label: 'Produk', icon: ShoppingBag },
   { href: '/petani/pesanan', label: 'Pesanan', icon: Package },
+  { href: '/petani/profil', label: 'Profil', icon: User },
 ]
 
 export default function PetaniNavbar() {
@@ -34,6 +35,7 @@ export default function PetaniNavbar() {
     <>
       <div className="h-[60px]" />
 
+      {/* TOP NAVBAR */}
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{ padding: scrolled ? '8px 16px' : '0' }}>
         <div className="flex items-center justify-between px-4 transition-all duration-300"
@@ -46,6 +48,7 @@ export default function PetaniNavbar() {
             margin: '0 auto',
           }}>
 
+          {/* Logo */}
           <Link href="/petani/dashboard" className="flex items-center gap-2">
             <Sprout size={20} color="#71BC68" />
             <span className="font-bold text-base" style={{ fontFamily: 'Sora, sans-serif' }}>
@@ -55,6 +58,7 @@ export default function PetaniNavbar() {
             </span>
           </Link>
 
+          {/* Desktop nav - include Profil */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
@@ -68,6 +72,7 @@ export default function PetaniNavbar() {
             ))}
           </nav>
 
+          {/* Keluar desktop */}
           <button onClick={handleLogout}
             className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-white/10"
             style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -90,12 +95,9 @@ export default function PetaniNavbar() {
               </Link>
             )
           })}
-          <button onClick={handleLogout} className="flex flex-col items-center gap-0.5 px-4 py-1.5">
-            <LogOut size={22} color="#9CA3AF" strokeWidth={1.8} />
-            <span className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>Keluar</span>
-          </button>
         </div>
       </div>
+
       <div className="md:hidden h-16" />
     </>
   )
