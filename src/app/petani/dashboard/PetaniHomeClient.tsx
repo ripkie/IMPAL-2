@@ -50,7 +50,7 @@ export default function PetaniHomeClient({
 
       {/* HEADER */}
       <section style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}
-        className="px-5 pt-5 pb-6 relative overflow-hidden">
+        className="px-5 pt-4 pb-6 md:pt-5 relative overflow-hidden">
         <div className="absolute" style={{ width: 180, height: 180, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -60, right: -30 }} />
         <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-3">
