@@ -58,6 +58,7 @@ export async function middleware(request: NextRequest) {
     if (
       path.startsWith('/petani') ||
       path.startsWith('/keranjang') ||
+      path.startsWith('/checkout') ||
       path.startsWith('/transaksi') ||
       path === '/home' ||
       path === '/profil' ||
@@ -108,6 +109,7 @@ export const config = {
     '/admin/:path*',
     '/petani/:path*',
     '/keranjang/:path*',
+    '/checkout',
     '/transaksi/:path*',
     '/produk/:path*',
     '/home',
