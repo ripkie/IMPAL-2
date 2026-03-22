@@ -2,11 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Package, Clock, Truck, CheckCircle, XCircle,
-  ChevronDown, ChevronUp, Search, Filter
-} from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { ORDER_STATUS } from '@/lib/constants'
 
 interface Order {
   id: string; order_number: string; status: string
@@ -27,24 +25,14 @@ interface Props {
   farmerId: string
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  pending:    { label: 'Menunggu', color: '#856404', bg: '#FFF3CD', icon: Clock },
-  paid:       { label: 'Dibayar', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF', icon: Package },
-  shipped:    { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA', icon: Truck },
-  done:       { label: 'Selesai', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
-  cancelled:  { label: 'Dibatal', color: '#721c24', bg: '#F8D7DA', icon: XCircle },
-}
-
 const FILTER_TABS = [
-  { key: 'all', label: 'Semua' },
-  { key: 'paid', label: 'Dibayar' },
+  { key: 'all',        label: 'Semua' },
+  { key: 'paid',       label: 'Dibayar' },
   { key: 'processing', label: 'Diproses' },
-  { key: 'shipped', label: 'Dikirim' },
-  { key: 'done', label: 'Selesai' },
+  { key: 'shipped',    label: 'Dikirim' },
+  { key: 'done',       label: 'Selesai' },
 ]
 
-// Group order items by order_id
 function groupByOrder(items: OrderItem[]) {
   const map = new Map<string, { order: Order; items: OrderItem[] }>()
   for (const item of items) {
@@ -96,7 +84,7 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
       .eq('id', orderId)
     if (error) showToast('Gagal update status', 'error')
     else {
-      showToast(`Status diubah ke ${STATUS_CONFIG[newStatus]?.label}`)
+      showToast(`Status diubah ke ${ORDER_STATUS[newStatus as keyof typeof ORDER_STATUS]?.label}`)
       router.refresh()
     }
     setUpdating(null)
@@ -110,7 +98,6 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
 
-        {/* Header */}
         <div className="mb-5">
           <h1 className="text-xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
             Pesanan Masuk
@@ -145,7 +132,6 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
           ))}
         </div>
 
-        {/* Order list */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl"
             style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
@@ -158,7 +144,7 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
         ) : (
           <div className="space-y-3">
             {filtered.map(({ order, items }) => {
-              const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending
+              const cfg = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS] ?? ORDER_STATUS.pending
               const StatusIcon = cfg.icon
               const isExpanded = expanded.has(order.id)
               const totalItem = items.reduce((s, i) => s + i.subtotal, 0)
@@ -167,7 +153,6 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
                 <div key={order.id} className="bg-white rounded-2xl overflow-hidden"
                   style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
 
-                  {/* Order header */}
                   <div className="px-4 py-3 flex items-center justify-between"
                     style={{ borderBottom: isExpanded ? '1px solid #f3f4f6' : 'none' }}>
                     <div className="flex items-center gap-3">
@@ -196,11 +181,8 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
                     </div>
                   </div>
 
-                  {/* Detail */}
                   {isExpanded && (
                     <div className="px-4 pb-4">
-
-                      {/* Items */}
                       <div className="space-y-2 mt-3">
                         {items.map(item => (
                           <div key={item.id} className="flex items-center justify-between py-2"
@@ -224,7 +206,7 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
                         </div>
                       </div>
 
-                      {/* Shipping info */}
+                      {/* Info pengiriman */}
                       <div className="mt-3 p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
                         <p className="text-xs font-bold mb-1" style={{ color: '#0A4C3E' }}>Info Pengiriman</p>
                         <p className="text-xs" style={{ color: '#6B7C6A' }}>{order.shipping_name} · {order.shipping_phone}</p>
@@ -275,7 +257,6 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
         )}
       </div>
 
-      {/* TOAST */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
           style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545', color: 'white', minWidth: '200px', textAlign: 'center' }}>

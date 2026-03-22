@@ -6,6 +6,7 @@ import {
   ArrowRight, Plus, ShoppingBag, ClipboardList, Bell, Inbox
 } from 'lucide-react'
 import type { Profile, Notification } from '@/types'
+import { ORDER_STATUS } from '@/lib/constants'
 
 interface Order {
   id: string
@@ -29,13 +30,7 @@ interface Props {
   stokMenipis: StokItem[]
 }
 
-const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  pending:    { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
-  paid:       { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped:    { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
-  done:       { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
-}
+
 
 export default function PetaniHomeClient({
   profile, totalProduk, totalPendapatan, pesananMasuk, notifikasi, stokMenipis
@@ -50,7 +45,7 @@ export default function PetaniHomeClient({
 
       {/* HEADER */}
       <section style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}
-        className="px-5 pt-4 pb-6 md:pt-5 relative overflow-hidden">
+        className="px-5 pt-5 pb-6 relative overflow-hidden">
         <div className="absolute" style={{ width: 180, height: 180, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -60, right: -30 }} />
         <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-3">
@@ -182,10 +177,10 @@ export default function PetaniHomeClient({
                   {item.orders && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
                       style={{
-                        background: STATUS_LABEL[item.orders.status]?.bg ?? '#f0f0f0',
-                        color: STATUS_LABEL[item.orders.status]?.color ?? '#666'
+                        background: ORDER_STATUS[item.orders.status]?.bg ?? '#f0f0f0',
+                        color: ORDER_STATUS[item.orders.status]?.color ?? '#666'
                       }}>
-                      {STATUS_LABEL[item.orders.status]?.label ?? item.orders.status}
+                      {ORDER_STATUS[item.orders.status]?.label ?? item.orders.status}
                     </span>
                   )}
                 </div>

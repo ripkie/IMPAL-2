@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { ORDER_STATUS } from '@/lib/constants'
 import {
   Users, ShoppingBag, ClipboardList, CheckCircle,
   AlertTriangle, ArrowRight, UserCheck, Package
@@ -34,14 +35,7 @@ interface Props {
   orderTerbaru: Order[]
 }
 
-const ORDER_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Pending', color: '#856404', bg: '#FFF3CD' },
-  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped: { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
-  done: { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
-  cancelled: { label: 'Dibatal', color: '#721c24', bg: '#F8D7DA' },
-}
+
 
 export default function AdminDashboardClient({
   totalPembeli, totalPetani, totalProduk, totalOrder,

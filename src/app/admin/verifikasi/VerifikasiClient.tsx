@@ -7,6 +7,7 @@ import {
   MapPin, Phone, Building2, FileText, ChevronDown, Filter
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { VERIFY_STATUS } from '@/lib/constants'
 
 interface Petani {
   id: string
@@ -28,11 +29,7 @@ interface Props {
   adminId: string
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  pending: { label: 'Menunggu', color: '#856404', bg: '#FFF3CD', icon: Clock },
-  approved: { label: 'Disetujui', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
-  rejected: { label: 'Ditolak', color: '#721c24', bg: '#F8D7DA', icon: XCircle },
-}
+
 
 export default function VerifikasiClient({ petani, adminId }: Props) {
   const router = useRouter()
@@ -218,7 +215,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                   background: filter === tab ? '#0A4C3E' : '#F4FAF3',
                   color: filter === tab ? 'white' : '#6B7C6A',
                 }}>
-                {tab === 'all' ? 'Semua' : STATUS_CONFIG[tab].label}
+                {tab === 'all' ? 'Semua' : VERIFY_STATUS[tab].label}
                 <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
                   style={{
                     background: filter === tab ? 'rgba(255,255,255,0.2)' : 'rgba(10,76,62,0.1)',
@@ -252,7 +249,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
         ) : (
           <div className="space-y-3">
             {filtered.map(p => {
-              const status = STATUS_CONFIG[p.verify_status] ?? STATUS_CONFIG.pending
+              const status = VERIFY_STATUS[p.verify_status] ?? VERIFY_STATUS.pending
               const StatusIcon = status.icon
               const isExpanded = expandedId === p.id
 

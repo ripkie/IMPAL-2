@@ -12,6 +12,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import ProductCard from '@/components/ui/ProductCard'
 import type { Product, Category, Notification, Profile } from '@/types'
+import { ORDER_STATUS } from '@/lib/constants'
 
 interface Order {
   id: string
@@ -107,12 +108,7 @@ const BANNERS = [
   },
 ]
 
-const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
-  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped: { label: 'Dikirim 🚚', color: '#0A4C3E', bg: '#D4EDDA' },
-}
+
 
 
 const CATEGORY_ICON: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
@@ -404,8 +400,8 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
                   <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>Rp {order.total_amount.toLocaleString('id-ID')}</p>
                 </div>
                 <span className="text-xs font-bold px-3 py-1 rounded-full"
-                  style={{ background: STATUS_LABEL[order.status]?.bg ?? '#f0f0f0', color: STATUS_LABEL[order.status]?.color ?? '#666' }}>
-                  {STATUS_LABEL[order.status]?.label ?? order.status}
+                  style={{ background: ORDER_STATUS[order.status]?.bg ?? '#f0f0f0', color: ORDER_STATUS[order.status]?.color ?? '#666' }}>
+                  {ORDER_STATUS[order.status]?.label ?? order.status}
                 </span>
               </div>
             ))}
