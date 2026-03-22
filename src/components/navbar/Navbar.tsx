@@ -72,7 +72,7 @@ export default function Navbar() {
     <>
       <div className="h-[72px]" />
 
-      {/* TOP NAVBAR */}
+      {/* Top Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{ padding: scrolled ? '10px 16px' : '0' }}>
         <div className="transition-all duration-300 flex items-center gap-3 px-4 py-3"
@@ -175,7 +175,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE BOTTOM NAV */}
+      {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ background: 'white', borderTop: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 -4px 20px rgba(10,76,62,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex flex-row items-center w-full px-2 py-2">
@@ -218,7 +218,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* MOBILE PROFILE BOTTOM SHEET */}
+      {/* Mobile Profile Bottom Sheet */}
       {profileOpen && (
         <div className="md:hidden fixed inset-0 z-[100]" onClick={() => setProfileOpen(false)}>
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />

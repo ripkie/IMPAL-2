@@ -1,7 +1,6 @@
 'use client'
 
-import { Bell } from 'lucide-react'
-import { NOTIF_TYPE } from '@/lib/constants'
+import { Bell, ShoppingBag, Truck, Tag, Info, CheckCircle } from 'lucide-react'
 
 interface Notification {
   id: string; title: string; body: string
@@ -10,7 +9,13 @@ interface Notification {
 
 interface Props { notifications: Notification[] }
 
-
+const TYPE_CONFIG: Record<string, { icon: any; color: string; bg: string }> = {
+  order:    { icon: ShoppingBag, color: '#004085', bg: '#CCE5FF' },
+  payment:  { icon: CheckCircle, color: '#155724', bg: '#D4EDDA' },
+  shipping: { icon: Truck, color: '#0A4C3E', bg: '#D4EDDA' },
+  promo:    { icon: Tag, color: '#856404', bg: '#FFF3CD' },
+  system:   { icon: Info, color: '#6B7C6A', bg: '#f3f4f6' },
+}
 
 export default function NotifikasiClient({ notifications }: Props) {
   function timeAgo(dateStr: string) {
@@ -42,7 +47,7 @@ export default function NotifikasiClient({ notifications }: Props) {
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => {
-              const cfg = NOTIF_TYPE[notif.type] ?? NOTIF_TYPE.system
+              const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.system
               const Icon = cfg.icon
               return (
                 <div key={notif.id}

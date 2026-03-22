@@ -215,7 +215,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
         )}
       </div>
 
-      {/* PRODUCT DETAIL MODAL */}
+      {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.5)' }}
@@ -321,7 +321,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
         </div>
       )}
 
-      {/* TOAST */}
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
           style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545', color: 'white', minWidth: '220px', textAlign: 'center' }}>

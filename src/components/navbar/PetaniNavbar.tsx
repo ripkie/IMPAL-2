@@ -35,7 +35,7 @@ export default function PetaniNavbar() {
     <>
       <div className="hidden md:block h-[60px]" />
 
-      {/* TOP NAVBAR */}
+      {/* Top Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{ padding: scrolled ? '8px 16px' : '0' }}>
         <div className="flex items-center justify-between px-4 transition-all duration-300"
@@ -81,7 +81,7 @@ export default function PetaniNavbar() {
         </div>
       </header>
 
-      {/* MOBILE BOTTOM NAV */}
+      {/* Mobile Bottom Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ background: 'white', borderTop: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 -4px 20px rgba(10,76,62,0.08)' }}>
         <div className="flex items-center justify-around py-2">

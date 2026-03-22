@@ -433,7 +433,7 @@ export default function PetaniProdukClient({ products: initialProducts, categori
         </div>
       )}
 
-      {/* DELETE CONFIRM */}
+      {/* Delete Confirm */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
           style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setDeleteConfirm(null)}>
@@ -458,7 +458,7 @@ export default function PetaniProdukClient({ products: initialProducts, categori
         </div>
       )}
 
-      {/* TOAST */}
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
           style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545', color: 'white', minWidth: '200px', textAlign: 'center' }}>

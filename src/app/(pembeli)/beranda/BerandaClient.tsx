@@ -54,7 +54,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* HERO BANNER */}
+      {/* Hero Banner */}
       <section className="relative overflow-hidden" style={{ background: '#0A4C3E', minHeight: '320px' }}>
         <div className="absolute" style={{ width: 300, height: 300, borderRadius: '50%', background: 'rgba(113,188,104,0.12)', top: -80, right: -60 }} />
         <div className="absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,239,174,0.08)', bottom: -60, left: 40 }} />
@@ -104,7 +104,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         </div>
       </section>
 
-      {/* KEUNGGULAN */}
+      {/* Keunggulan */}
       <section className="max-w-5xl mx-auto px-6 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
@@ -126,7 +126,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         </div>
       </section>
 
-      {/* KATEGORI */}
+      {/* Kategori */}
       <section className="max-w-5xl mx-auto px-6 pb-10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
@@ -158,7 +158,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         </div>
       </section>
 
-      {/* PRODUK TERLARIS */}
+      {/* Produk Terlaris */}
       {terlaris.length > 0 && (
         <section className="max-w-5xl mx-auto px-6 pb-10">
           <div className="flex items-center justify-between mb-4">
@@ -186,7 +186,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         </section>
       )}
 
-      {/* PRODUK TERBARU */}
+      {/* Produk Terbaru */}
       <section className="max-w-5xl mx-auto px-6 pb-16">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
@@ -223,7 +223,7 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         )}
       </section>
 
-      {/* BANNER PETANI */}
+      {/* Banner Petani */}
       <section className="max-w-5xl mx-auto px-6 pb-16">
         <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6"
           style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}>

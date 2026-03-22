@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ORDER_STATUS } from '@/lib/constants'
 import {
   Users, ShoppingBag, ClipboardList, CheckCircle,
   AlertTriangle, ArrowRight, UserCheck, Package
@@ -35,7 +34,14 @@ interface Props {
   orderTerbaru: Order[]
 }
 
-
+const ORDER_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Pending', color: '#856404', bg: '#FFF3CD' },
+  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
+  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
+  shipped: { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
+  done: { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
+  cancelled: { label: 'Dibatal', color: '#721c24', bg: '#F8D7DA' },
+}
 
 export default function AdminDashboardClient({
   totalPembeli, totalPetani, totalProduk, totalOrder,
@@ -64,7 +70,7 @@ export default function AdminDashboardClient({
           </p>
         </div>
 
-        {/* ALERT PENDING */}
+        {/* Alert Pending */}
         {pendingVerifikasi > 0 && (
           <div className="mb-5 p-4 rounded-2xl flex items-center justify-between gap-3"
             style={{ background: '#FFF3CD', border: '1.5px solid #FFEAA7' }}>
@@ -89,7 +95,7 @@ export default function AdminDashboardClient({
           </div>
         )}
 
-        {/* STATS GRID */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {stats.map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-4"
@@ -105,7 +111,7 @@ export default function AdminDashboardClient({
           ))}
         </div>
 
-        {/* QUICK ACTIONS */}
+        {/* Quick Actions */}
         <div className="mb-6">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
             Kelola Platform

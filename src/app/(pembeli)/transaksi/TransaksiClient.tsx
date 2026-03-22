@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react'
-import { ORDER_STATUS } from '@/lib/constants'
+import {
+  Package, Clock, Truck, CheckCircle, XCircle,
+  ChevronDown, ChevronUp, ShoppingBag
+} from 'lucide-react'
 
 interface OrderItem {
   id: string; product_name: string; price: number
@@ -21,13 +23,22 @@ interface Order {
 
 interface Props { orders: Order[] }
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+  pending:    { label: 'Menunggu Pembayaran', color: '#856404', bg: '#FFF3CD', icon: Clock },
+  paid:       { label: 'Sudah Dibayar', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
+  processing: { label: 'Sedang Diproses', color: '#004085', bg: '#CCE5FF', icon: Package },
+  shipped:    { label: 'Dalam Pengiriman', color: '#0A4C3E', bg: '#D4EDDA', icon: Truck },
+  done:       { label: 'Selesai', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
+  cancelled:  { label: 'Dibatalkan', color: '#721c24', bg: '#F8D7DA', icon: XCircle },
+}
+
 const FILTER_TABS = [
-  { key: 'all',        label: 'Semua' },
-  { key: 'pending',    label: 'Menunggu' },
+  { key: 'all', label: 'Semua' },
+  { key: 'pending', label: 'Menunggu' },
   { key: 'processing', label: 'Diproses' },
-  { key: 'shipped',    label: 'Dikirim' },
-  { key: 'done',       label: 'Selesai' },
-  { key: 'cancelled',  label: 'Dibatal' },
+  { key: 'shipped', label: 'Dikirim' },
+  { key: 'done', label: 'Selesai' },
+  { key: 'cancelled', label: 'Dibatal' },
 ]
 
 export default function TransaksiClient({ orders }: Props) {
@@ -36,9 +47,9 @@ export default function TransaksiClient({ orders }: Props) {
 
   function toggleExpand(id: string) {
     setExpanded(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
+      const n = new Set(prev)
+      n.has(id) ? n.delete(id) : n.add(id)
+      return n
     })
   }
 
@@ -79,7 +90,7 @@ export default function TransaksiClient({ orders }: Props) {
         ) : (
           <div className="space-y-3">
             {filtered.map(order => {
-              const cfg = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS] ?? ORDER_STATUS.pending
+              const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending
               const StatusIcon = cfg.icon
               const isExp = expanded.has(order.id)
               const date = new Date(order.created_at).toLocaleDateString('id-ID', {
@@ -120,6 +131,7 @@ export default function TransaksiClient({ orders }: Props) {
                   {/* Detail */}
                   {isExp && (
                     <div className="px-4 pb-4">
+                      {/* Items */}
                       <div className="space-y-2 mt-3">
                         {order.order_items.map(item => (
                           <div key={item.id} className="flex items-center justify-between py-2"

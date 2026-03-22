@@ -6,7 +6,6 @@ import {
   ArrowRight, Plus, ShoppingBag, ClipboardList, Bell, Inbox
 } from 'lucide-react'
 import type { Profile, Notification } from '@/types'
-import { ORDER_STATUS } from '@/lib/constants'
 
 interface Order {
   id: string
@@ -30,7 +29,13 @@ interface Props {
   stokMenipis: StokItem[]
 }
 
-
+const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
+  pending:    { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
+  paid:       { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
+  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
+  shipped:    { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
+  done:       { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
+}
 
 export default function PetaniHomeClient({
   profile, totalProduk, totalPendapatan, pesananMasuk, notifikasi, stokMenipis
@@ -43,9 +48,9 @@ export default function PetaniHomeClient({
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
-      {/* HEADER */}
+      {/* Header */}
       <section style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}
-        className="px-5 pt-5 pb-6 relative overflow-hidden">
+        className="px-5 pt-4 pb-6 md:pt-5 relative overflow-hidden">
         <div className="absolute" style={{ width: 180, height: 180, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -60, right: -30 }} />
         <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-3">
@@ -70,7 +75,7 @@ export default function PetaniHomeClient({
 
       <div className="max-w-5xl mx-auto px-5 pb-20">
 
-        {/* STATS */}
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-3 mt-3 mb-4">
           <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 2px 8px rgba(10,76,62,0.06)' }}>
             <div className="flex items-center gap-2 mb-2">
@@ -95,7 +100,7 @@ export default function PetaniHomeClient({
           </div>
         </div>
 
-        {/* QUICK ACTIONS */}
+        {/* Quick Actions */}
         <div className="mb-5">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Aksi Cepat</h2>
           <div className="grid grid-cols-3 gap-3">
@@ -117,7 +122,7 @@ export default function PetaniHomeClient({
           </div>
         </div>
 
-        {/* STOK MENIPIS */}
+        {/* Stok Menipis */}
         {stokMenipis.length > 0 && (
           <div className="mb-5 p-4 rounded-2xl" style={{ background: '#FFF3CD', border: '1px solid #FFEAA7' }}>
             <div className="flex items-center gap-2 mb-2">
@@ -142,7 +147,7 @@ export default function PetaniHomeClient({
           </div>
         )}
 
-        {/* PESANAN MASUK */}
+        {/* Pesanan Masuk */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-sm" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Pesanan Masuk</h2>
@@ -177,10 +182,10 @@ export default function PetaniHomeClient({
                   {item.orders && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
                       style={{
-                        background: ORDER_STATUS[item.orders.status]?.bg ?? '#f0f0f0',
-                        color: ORDER_STATUS[item.orders.status]?.color ?? '#666'
+                        background: STATUS_LABEL[item.orders.status]?.bg ?? '#f0f0f0',
+                        color: STATUS_LABEL[item.orders.status]?.color ?? '#666'
                       }}>
-                      {ORDER_STATUS[item.orders.status]?.label ?? item.orders.status}
+                      {STATUS_LABEL[item.orders.status]?.label ?? item.orders.status}
                     </span>
                   )}
                 </div>

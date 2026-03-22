@@ -128,7 +128,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
-      {/* HEADER */}
+      {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0A4C3E, #0d6b55)' }} className="px-5 pt-6 pb-10 relative">
         <div className="absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -80, right: -40 }} />
         <div className="max-w-xl mx-auto relative">
@@ -189,7 +189,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
       <div style={{ background: '#F4FAF3', borderRadius: '20px 20px 0 0', marginTop: -8, position: 'relative', zIndex: 10 }}>
         <div className="max-w-xl mx-auto px-4 pt-5 pb-24 md:pb-10">
 
-          {/* STATS */}
+          {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-5">
             {[
               { label: 'Total Pesanan', value: stats.totalOrder, icon: ShoppingBag, color: '#CCE5FF', iconColor: '#004085' },
@@ -207,7 +207,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
             ))}
           </div>
 
-          {/* INFO PROFIL */}
+          {/* Info Profil */}
           <div className="bg-white rounded-2xl overflow-hidden mb-4"
             style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 4px 16px rgba(10,76,62,0.06)' }}>
             <div className="flex items-center justify-between px-5 pt-4 pb-3" style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -271,7 +271,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
             </div>
           </div>
 
-          {/* MENU */}
+          {/* Menu */}
           <div className="bg-white rounded-2xl overflow-hidden mb-4"
             style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 4px 16px rgba(10,76,62,0.06)' }}>
             {[
@@ -293,7 +293,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
             ))}
           </div>
 
-          {/* KELUAR */}
+          {/* Keluar */}
           <button onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm"
             style={{ background: '#FEE2E2', color: '#dc3545', border: '1px solid rgba(220,53,69,0.15)' }}>
@@ -306,7 +306,7 @@ export default function ProfilClient({ profile: initialProfile, email, stats }: 
         </div>
       </div>
 
-      {/* TOAST */}
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
           style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545', color: 'white', minWidth: '200px', textAlign: 'center' }}>

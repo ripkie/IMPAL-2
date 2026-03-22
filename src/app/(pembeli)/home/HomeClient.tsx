@@ -12,7 +12,6 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import ProductCard from '@/components/ui/ProductCard'
 import type { Product, Category, Notification, Profile } from '@/types'
-import { ORDER_STATUS } from '@/lib/constants'
 
 interface Order {
   id: string
@@ -108,7 +107,12 @@ const BANNERS = [
   },
 ]
 
-
+const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
+  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
+  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
+  shipped: { label: 'Dikirim 🚚', color: '#0A4C3E', bg: '#D4EDDA' },
+}
 
 
 const CATEGORY_ICON: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
@@ -120,7 +124,7 @@ const CATEGORY_ICON: Record<string, { icon: React.ElementType; color: string; bg
   'lainnya': { icon: Sprout, color: '#0A4C3E', bg: '#F4FAF3' },
 }
 
-// ── RECIPE MODAL ─────────────────────────────────────────────
+// RECIPE MODAL
 function RecipeModal({ recipe, image, onClose, onCheckout }: {
   recipe: NonNullable<typeof BANNERS[2]['recipe']>
   image: string
@@ -188,7 +192,7 @@ function RecipeModal({ recipe, image, onClose, onCheckout }: {
   )
 }
 
-// ── MAIN COMPONENT ───────────────────────────────────────────
+// MAIN COMPONENT
 export default function HomeClient({ profile, rekomendasi, terbaru, categories, notifikasi, pesananAktif }: Props) {
   const router = useRouter()
   const [addedId, setAddedId] = useState<string | null>(null)
@@ -260,7 +264,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
       {/* Extra spacer mobile agar tidak tertutup navbar */}
       <div className="block md:hidden" style={{ height: '8px' }} />
 
-      {/* ── SAPAAN + PESANAN AKTIF BAR ── */}
+      {/* SAPAAN + PESANAN AKTIF BAR */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-5 pb-2">
         <div className="flex items-center justify-between">
           <div>
@@ -286,7 +290,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       </div>
 
-      {/* ── BANNER FULL WIDTH ── */}
+      {/* Banner Full Width */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
         <div className="relative overflow-hidden rounded-3xl select-none cursor-pointer"
           onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
@@ -296,7 +300,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
           }}>
 
           <div className="relative overflow-hidden rounded-3xl" style={{ height: '260px' }}>
-            {/* BG */}
+            {/* Bg */}
             <div className="absolute inset-0 transition-all duration-700" style={{ background: currentBanner.bg }} />
 
             {/* Gambar — full cover dengan opacity */}
@@ -352,7 +356,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       </div>
 
-      {/* ── KEUNGGULAN ── */}
+      {/* Keunggulan */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -377,7 +381,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       </div>
 
-      {/* ── PESANAN AKTIF (mobile) ── */}
+      {/* PESANAN AKTIF (mobile) */}
       {pesananAktif.length > 0 && (
         <div className="md:hidden max-w-6xl mx-auto px-4 mb-5">
           <div className="flex items-center justify-between mb-3">
@@ -400,8 +404,8 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
                   <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>Rp {order.total_amount.toLocaleString('id-ID')}</p>
                 </div>
                 <span className="text-xs font-bold px-3 py-1 rounded-full"
-                  style={{ background: ORDER_STATUS[order.status]?.bg ?? '#f0f0f0', color: ORDER_STATUS[order.status]?.color ?? '#666' }}>
-                  {ORDER_STATUS[order.status]?.label ?? order.status}
+                  style={{ background: STATUS_LABEL[order.status]?.bg ?? '#f0f0f0', color: STATUS_LABEL[order.status]?.color ?? '#666' }}>
+                  {STATUS_LABEL[order.status]?.label ?? order.status}
                 </span>
               </div>
             ))}
@@ -409,7 +413,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       )}
 
-      {/* ── KATEGORI ── */}
+      {/* Kategori */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Kategori</h2>
@@ -437,7 +441,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       </div>
 
-      {/* ── FLASH SALE BANNER (desktop strip) ── */}
+      {/* FLASH SALE BANNER (desktop strip) */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
         <div className="rounded-2xl px-6 py-4 flex items-center justify-between"
           style={{ background: 'linear-gradient(90deg, #0A4C3E, #0d6b55)' }}>
@@ -456,7 +460,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       </div>
 
-      {/* ── REKOMENDASI — desktop: 5 col, mobile: 2 col ── */}
+      {/* REKOMENDASI — desktop: 5 col, mobile: 2 col */}
       {rekomendasi.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 md:px-6 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -484,7 +488,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       )}
 
-      {/* ── NOTIFIKASI (mobile) ── */}
+      {/* NOTIFIKASI (mobile) */}
       {notifikasi.length > 0 && (
         <div className="md:hidden max-w-6xl mx-auto px-4 mb-5">
           <div className="flex items-center justify-between mb-3">
@@ -513,7 +517,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       )}
 
-      {/* ── PRODUK TERBARU — desktop: 5 col, mobile: 2 col ── */}
+      {/* PRODUK TERBARU — desktop: 5 col, mobile: 2 col */}
       {terbaru.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16">
           <div className="flex items-center justify-between mb-4">
@@ -541,7 +545,7 @@ export default function HomeClient({ profile, rekomendasi, terbaru, categories, 
         </div>
       )}
 
-      {/* RECIPE MODAL */}
+      {/* Recipe Modal */}
       {recipeModal && (
         <RecipeModal
           recipe={recipeModal.recipe}
