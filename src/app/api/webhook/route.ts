@@ -5,29 +5,57 @@ import crypto from 'crypto'
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
+        console.log('Webhook masuk:', body)
+
         const supabase = await createClient()
 
-        const { order_id, status_code, gross_amount, signature_key, transaction_status, fraud_status } = body
+        const {
+            order_id,
+            status_code,
+            gross_amount,
+            signature_key,
+            transaction_status,
+            fraud_status,
+        } = body
+
+        // Validasi field wajib dari Midtrans
+        if (!order_id || !status_code || !gross_amount || !signature_key || !transaction_status) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+        }
 
         // Verifikasi signature dari Midtrans
-        const serverKey = process.env.MIDTRANS_SERVER_KEY!
-        const hash = crypto
+        const serverKey = process.env.MIDTRANS_SERVER_KEY
+
+        if (!serverKey) {
+            console.error('MIDTRANS_SERVER_KEY belum diset')
+            return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+        }
+
+        const expectedSignature = crypto
             .createHash('sha512')
-            .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
+            .update(`${String(order_id)}${String(status_code)}${String(gross_amount)}${String(serverKey)}`)
             .digest('hex')
 
-        if (hash !== signature_key) {
+        if (expectedSignature.trim().toLowerCase() !== String(signature_key).trim().toLowerCase()) {
+            console.error('Invalid signature', {
+                order_id,
+                status_code,
+                gross_amount,
+                incoming: signature_key,
+                expected: expectedSignature,
+            })
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
         }
 
         // Cari order berdasarkan midtrans_order_id
-        const { data: order } = await supabase
+        const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('id, buyer_id, status')
             .eq('midtrans_order_id', order_id)
             .single()
 
-        if (!order) {
+        if (orderError || !order) {
+            console.error('Order not found:', order_id, orderError)
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 
