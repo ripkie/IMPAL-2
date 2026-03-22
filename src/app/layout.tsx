@@ -4,6 +4,9 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper'
 
 export const metadata: Metadata = {
   title: 'KiTani - Sayuran Segar Langsung dari Petani',
+  icons: {
+    icon: '/logoKitani.png',  // taruh file di folder /public
+  },
   description: 'Beli sayuran segar organik langsung dari petani lokal. Hemat, sehat, tanpa perantara.',
 }
 
