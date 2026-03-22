@@ -3,7 +3,7 @@ import './globals.css'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper'
 
 export const metadata: Metadata = {
-  title: 'KiTani — Sayuran Segar Langsung dari Petani',
+  title: 'KiTani - Sayuran Segar Langsung dari Petani',
   description: 'Beli sayuran segar organik langsung dari petani lokal. Hemat, sehat, tanpa perantara.',
 }
 
