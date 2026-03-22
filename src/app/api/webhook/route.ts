@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
         console.log('Webhook masuk:', body)
-
-        const supabase = await createClient()
 
         const {
             order_id,
@@ -18,14 +21,11 @@ export async function POST(req: NextRequest) {
             fraud_status,
         } = body
 
-        // Validasi field wajib dari Midtrans
         if (!order_id || !status_code || !gross_amount || !signature_key || !transaction_status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
-        // Verifikasi signature dari Midtrans
         const serverKey = process.env.MIDTRANS_SERVER_KEY
-
         if (!serverKey) {
             console.error('MIDTRANS_SERVER_KEY belum diset')
             return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
         }
 
-        // Cari order berdasarkan midtrans_order_id
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('id, buyer_id, status')
@@ -59,16 +58,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 
-        // Update status berdasarkan notif Midtrans
         if (transaction_status === 'capture' || transaction_status === 'settlement') {
             if (fraud_status === 'accept' || !fraud_status) {
-                await supabase.from('orders').update({
-                    status: 'paid',
-                    payment_status: 'paid',
-                    paid_at: new Date().toISOString(),
-                }).eq('id', order.id)
+                const { error: updateError } = await supabase
+                    .from('orders')
+                    .update({
+                        status: 'paid',
+                        payment_status: 'paid',
+                        paid_at: new Date().toISOString(),
+                    })
+                    .eq('id', order.id)
 
-                // Notifikasi ke pembeli
+                if (updateError) {
+                    console.error('Gagal update order paid:', updateError)
+                    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+                }
+
                 await supabase.from('notifications').insert({
                     user_id: order.buyer_id,
                     title: '✅ Pembayaran Berhasil!',
