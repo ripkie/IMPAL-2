@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       .eq('id', userId)
       .single()
 
-    const snapToken = await snap.createTransactionToken({
+    const { token: snapToken } = await (snap as any).createTransaction({
       transaction_details: {
         order_id: midtransOrderId,
         gross_amount: total,
