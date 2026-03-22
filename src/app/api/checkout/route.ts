@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
       subtotal, total, notes,
     } = body
 
-    // Ambil cart items + validasi stok
     const { data: cartItems, error: cartError } = await supabase
       .from('carts')
       .select(`*, products(id, name, price, unit, stock, farmer_id, image_urls)`)
@@ -30,7 +29,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cart tidak valid' }, { status: 400 })
     }
 
-    // Cek stok
     for (const item of cartItems) {
       if (!item.products) continue
       if (item.quantity > item.products.stock) {
@@ -38,15 +36,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Generate order number
     const orderNumber = `KT${Date.now().toString().slice(-8)}`
+    const midtransOrderId = `${orderNumber}-${Date.now()}`
 
-    // Buat order di Supabase
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         buyer_id: userId,
         order_number: orderNumber,
+        midtrans_order_id: midtransOrderId,
         status: 'pending',
         shipping_name: shippingName,
         shipping_phone: shippingPhone,
@@ -63,10 +61,10 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (orderError || !order) {
+      console.error('Gagal membuat order:', orderError)
       return NextResponse.json({ error: 'Gagal membuat order' }, { status: 500 })
     }
 
-    // Insert order items
     const orderItems = cartItems.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
@@ -78,19 +76,11 @@ export async function POST(req: NextRequest) {
       subtotal: (item.products?.price ?? 0) * item.quantity,
     }))
 
-    await supabase.from('order_items').insert(orderItems)
-
-    // Hapus cart items yang sudah dicheckout
-    await supabase.from('carts').delete().in('id', cartItemIds)
-
-    // Buat Midtrans transaction
-    const midtransOrderId = `${orderNumber}-${Date.now()}`
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, phone')
-      .eq('id', userId)
-      .single()
+    const { error: orderItemsError } = await supabase.from('order_items').insert(orderItems)
+    if (orderItemsError) {
+      console.error('Gagal insert order items:', orderItemsError)
+      return NextResponse.json({ error: 'Gagal menyimpan item order' }, { status: 500 })
+    }
 
     const { token: snapToken } = await (snap as any).createTransaction({
       transaction_details: {
@@ -122,10 +112,17 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    // Simpan midtrans token ke order
-    await supabase.from('orders')
-      .update({ midtrans_order_id: midtransOrderId, midtrans_token: snapToken })
+    const { error: updateOrderError } = await supabase
+      .from('orders')
+      .update({ midtrans_token: snapToken })
       .eq('id', order.id)
+
+    if (updateOrderError) {
+      console.error('Gagal simpan midtrans token:', updateOrderError)
+      return NextResponse.json({ error: 'Gagal menyimpan token pembayaran' }, { status: 500 })
+    }
+
+    await supabase.from('carts').delete().in('id', cartItemIds)
 
     return NextResponse.json({ snapToken, orderId: order.id })
   } catch (err: any) {
