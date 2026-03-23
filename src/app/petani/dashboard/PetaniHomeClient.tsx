@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import {
   Package, TrendingUp, AlertTriangle,
-  ArrowRight, Plus, ShoppingBag, ClipboardList, Bell, Inbox
+  ArrowRight, Plus, ShoppingBag, ClipboardList,
+  Bell, Inbox, CheckCircle, Clock
 } from 'lucide-react'
 import type { Profile, Notification } from '@/types'
 
@@ -27,18 +28,20 @@ interface Props {
   pesananMasuk: Order[]
   notifikasi: Notification[]
   stokMenipis: StokItem[]
+  pesananPerluAksi: number
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  pending:    { label: 'Menunggu Bayar', color: '#856404', bg: '#FFF3CD' },
-  paid:       { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped:    { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
-  done:       { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
+  pending:    { label: 'Menunggu Bayar',  color: '#856404', bg: '#FFF3CD' },
+  paid:       { label: 'Perlu Diproses',  color: '#004085', bg: '#CCE5FF' },
+  processing: { label: 'Sedang Diproses', color: '#0A4C3E', bg: '#D0ECD6' },
+  shipped:    { label: 'Dikirim',         color: '#155724', bg: '#D4EDDA' },
+  done:       { label: 'Selesai',         color: '#155724', bg: '#D4EDDA' },
 }
 
 export default function PetaniHomeClient({
-  profile, totalProduk, totalPendapatan, pesananMasuk, notifikasi, stokMenipis
+  profile, totalProduk, totalPendapatan,
+  pesananMasuk, notifikasi, stokMenipis, pesananPerluAksi
 }: Props) {
   const router = useRouter()
   const jam = new Date().getHours()
@@ -49,74 +52,114 @@ export default function PetaniHomeClient({
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
       {/* Header */}
-      <section style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}
-        className="px-5 pt-4 pb-6 md:pt-5 relative overflow-hidden">
-        <div className="absolute" style={{ width: 180, height: 180, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -60, right: -30 }} />
+      <section style={{ background: '#0A4C3E', position: 'relative', overflow: 'hidden' }}
+        className="px-5 pt-4 pb-6">
+        <div className="absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -70, right: -40 }} />
         <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>{salam},</p>
-              <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>{firstName}</h1>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{salam},</p>
+              <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
+                {firstName}
+              </h1>
             </div>
             <button onClick={() => router.push('/petani/notifikasi')}
-              className="relative w-9 h-9 rounded-full flex items-center justify-center"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center"
               style={{ background: 'rgba(255,255,255,0.1)' }}>
-              <Bell size={16} color="white" />
+              <Bell size={18} color="white" />
               {notifikasi.length > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-white flex items-center justify-center"
-                  style={{ background: '#71BC68', fontSize: '9px', fontWeight: 700, border: '2px solid #0A4C3E' }}>
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ background: '#71BC68', fontSize: '9px', fontWeight: 700, color: '#0A4C3E', border: '2px solid #0A4C3E' }}>
                   {notifikasi.length > 9 ? '9+' : notifikasi.length}
                 </span>
               )}
             </button>
           </div>
+
+          {/* Banner pesanan perlu aksi */}
+          {pesananPerluAksi > 0 && (
+            <button
+              onClick={() => router.push('/petani/pesanan')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition hover:opacity-90"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(113,188,104,0.3)' }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: '#71BC68' }}>
+                <Clock size={15} color="#0A4C3E" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">
+                  {pesananPerluAksi} pesanan butuh tindakan
+                </p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  Tap untuk proses sekarang
+                </p>
+              </div>
+              <ArrowRight size={16} color="rgba(255,255,255,0.6)" />
+            </button>
+          )}
         </div>
       </section>
 
-      <div className="max-w-5xl mx-auto px-5 pb-20">
+      <div className="max-w-5xl mx-auto px-5 pb-24">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mt-3 mb-4">
-          <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 2px 8px rgba(10,76,62,0.06)' }}>
+        <div className="grid grid-cols-2 gap-3 mt-4 mb-4">
+          <div className="bg-white rounded-2xl p-4"
+            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#D4EDDA' }}>
                 <Package size={16} color="#155724" />
               </div>
               <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>Produk Aktif</span>
             </div>
-            <p className="text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>{totalProduk}</p>
+            <p className="text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              {totalProduk}
+            </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 2px 8px rgba(10,76,62,0.06)' }}>
+          <div className="bg-white rounded-2xl p-4"
+            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#CCE5FF' }}>
                 <TrendingUp size={16} color="#004085" />
               </div>
-              <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>Total Pendapatan</span>
+              <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>Pendapatan</span>
             </div>
-            <p className="text-lg font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+            <p className="text-base font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
               Rp {totalPendapatan.toLocaleString('id-ID')}
             </p>
+            <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>Pesanan selesai</p>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="mb-5">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Aksi Cepat</h2>
+          <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+            Aksi Cepat
+          </h2>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: Plus, label: 'Tambah Produk', action: '/petani/produk', bg: '#0A4C3E', iconColor: '#71BC68' },
-              { icon: ShoppingBag, label: 'Produk Saya', action: '/petani/produk', bg: 'white', iconColor: '#0A4C3E' },
-              { icon: ClipboardList, label: 'Pesanan', action: '/petani/pesanan', bg: 'white', iconColor: '#0A4C3E' },
+              { icon: Plus,          label: 'Tambah Produk',  href: '/petani/produk',  dark: true },
+              { icon: ShoppingBag,   label: 'Produk Saya',    href: '/petani/produk',  dark: false },
+              { icon: ClipboardList, label: 'Pesanan',        href: '/petani/pesanan', dark: false, badge: pesananPerluAksi },
             ].map(item => (
-              <button key={item.label} onClick={() => router.push(item.action)}
-                className="flex flex-col items-center gap-2 p-4 rounded-2xl transition hover:-translate-y-0.5"
-                style={{ background: item.bg, border: '1px solid rgba(113,188,104,0.15)' }}>
-                <item.icon size={20} color={item.iconColor} />
+              <button key={item.label} onClick={() => router.push(item.href)}
+                className="relative flex flex-col items-center gap-2 p-4 rounded-2xl transition hover:-translate-y-0.5"
+                style={{
+                  background: item.dark ? '#0A4C3E' : 'white',
+                  border: '1px solid rgba(113,188,104,0.15)',
+                }}>
+                <item.icon size={20} color={item.dark ? '#71BC68' : '#0A4C3E'} />
                 <span className="text-xs font-semibold text-center leading-tight"
-                  style={{ color: item.bg === '#0A4C3E' ? '#71BC68' : '#0A4C3E' }}>
+                  style={{ color: item.dark ? '#71BC68' : '#0A4C3E' }}>
                   {item.label}
                 </span>
+                {item.badge && item.badge > 0 ? (
+                  <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-white"
+                    style={{ background: '#dc3545', fontSize: '10px', fontWeight: 700 }}>
+                    {item.badge}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
@@ -147,10 +190,12 @@ export default function PetaniHomeClient({
           </div>
         )}
 
-        {/* Pesanan Masuk */}
+        {/* Pesanan Terbaru */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-sm" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>Pesanan Masuk</h2>
+            <h2 className="font-bold text-sm" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              Pesanan Terbaru
+            </h2>
             <button onClick={() => router.push('/petani/pesanan')}
               className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
               Lihat semua <ArrowRight size={12} />
@@ -158,38 +203,41 @@ export default function PetaniHomeClient({
           </div>
 
           {pesananMasuk.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-2xl" style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
+            <div className="text-center py-10 bg-white rounded-2xl"
+              style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
               <Inbox size={28} color="#9CA3AF" className="mx-auto mb-2" />
               <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Belum ada pesanan</p>
               <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>Pesanan baru akan muncul di sini</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {pesananMasuk.slice(0, 5).map(item => (
-                <div key={item.id}
-                  onClick={() => router.push('/petani/pesanan')}
-                  className="flex items-center gap-3 p-4 bg-white rounded-2xl cursor-pointer hover:shadow-sm transition"
-                  style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#F4FAF3' }}>
-                    <ShoppingBag size={16} color="#71BC68" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: '#0A4C3E' }}>{item.product_name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>
-                      {item.quantity}x · Rp {item.subtotal.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                  {item.orders && (
+              {pesananMasuk.slice(0, 5).map(item => {
+                const statusCfg = STATUS_LABEL[item.orders?.status ?? 'pending']
+                const needsAction = item.orders?.status === 'paid' || item.orders?.status === 'processing'
+                return (
+                  <div key={item.id}
+                    onClick={() => router.push('/petani/pesanan')}
+                    className="flex items-center gap-3 p-4 bg-white rounded-2xl cursor-pointer transition hover:shadow-sm"
+                    style={{ border: `1px solid ${needsAction ? 'rgba(0,64,133,0.2)' : 'rgba(113,188,104,0.15)'}` }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: statusCfg?.bg ?? '#f0f0f0' }}>
+                      <ShoppingBag size={16} color={statusCfg?.color ?? '#666'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: '#0A4C3E' }}>
+                        {item.product_name}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>
+                        {item.quantity}× · Rp {item.subtotal.toLocaleString('id-ID')}
+                      </p>
+                    </div>
                     <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
-                      style={{
-                        background: STATUS_LABEL[item.orders.status]?.bg ?? '#f0f0f0',
-                        color: STATUS_LABEL[item.orders.status]?.color ?? '#666'
-                      }}>
-                      {STATUS_LABEL[item.orders.status]?.label ?? item.orders.status}
+                      style={{ background: statusCfg?.bg ?? '#f0f0f0', color: statusCfg?.color ?? '#666' }}>
+                      {statusCfg?.label ?? item.orders?.status}
                     </span>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

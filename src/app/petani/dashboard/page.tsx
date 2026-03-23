@@ -5,40 +5,56 @@ import PetaniHomeClient from './PetaniHomeClient'
 export default async function PetaniDashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from('profiles').select('*').eq('id', user.id).single()
 
-  // Statistik produk
+  if (profile?.role !== 'petani') redirect('/home')
+
+  // Total produk aktif
   const { count: totalProduk } = await supabase
     .from('products')
     .select('*', { count: 'exact', head: true })
     .eq('farmer_id', user.id)
     .eq('is_active', true)
 
-  // Pesanan masuk
+  // Pesanan terbaru
   const { data: pesananMasukRaw } = await supabase
     .from('order_items')
-    .select(`
-      id, product_name, quantity, subtotal, created_at,
-      orders(id, order_number, status, buyer_id)
-    `)
+    .select(`id, product_name, quantity, subtotal, created_at, order_id, orders(id, order_number, status, buyer_id)`)
     .eq('farmer_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
 
-  // Flatten orders array → object (Supabase returns joined relation as array)
   const pesananMasuk = (pesananMasukRaw ?? []).map((item: any) => ({
     ...item,
     orders: Array.isArray(item.orders) ? (item.orders[0] ?? null) : item.orders
   }))
 
-  // Total pendapatan (pesanan done)
+  // Hitung pesanan yang perlu aksi (paid = perlu diproses, processing = perlu dikirim)
+  const { data: allOrders } = await supabase
+    .from('order_items')
+    .select('order_id, orders(id, status)')
+    .eq('farmer_id', user.id)
+
+  // Ambil unique order ids yang perlu aksi
+  const orderIds = new Set<string>()
+  const orderStatuses: Record<string, string> = {}
+
+  for (const item of allOrders ?? []) {
+    const order = Array.isArray((item as any).orders) ? (item as any).orders[0] : (item as any).orders
+    if (order?.id && order?.status) {
+      orderIds.add(order.id)
+      orderStatuses[order.id] = order.status
+    }
+  }
+
+  const pesananPerluAksi = Array.from(orderIds).filter(
+    id => orderStatuses[id] === 'paid' || orderStatuses[id] === 'processing'
+  ).length
+
+  // Total pendapatan dari pesanan done
   const { data: pendapatanData } = await supabase
     .from('order_items')
     .select('subtotal, orders(status)')
@@ -51,16 +67,16 @@ export default async function PetaniDashboardPage() {
     })
     .reduce((sum: number, item: any) => sum + (item.subtotal ?? 0), 0)
 
-  // Notifikasi
+  // Notifikasi belum dibaca
   const { data: notifikasi } = await supabase
     .from('notifications')
     .select('*')
     .eq('user_id', user.id)
     .eq('is_read', false)
     .order('created_at', { ascending: false })
-    .limit(5)
+    .limit(10)
 
-  // Produk stok menipis
+  // Stok menipis
   const { data: stokMenipis } = await supabase
     .from('products')
     .select('id, name, stock, unit')
@@ -78,6 +94,7 @@ export default async function PetaniDashboardPage() {
       pesananMasuk={pesananMasuk}
       notifikasi={notifikasi ?? []}
       stokMenipis={stokMenipis ?? []}
+      pesananPerluAksi={pesananPerluAksi}
     />
   )
 }

@@ -19,9 +19,13 @@ export async function POST(req: NextRequest) {
       subtotal, total, notes,
     } = body
 
+    // Ambil cart items + data produk lengkap termasuk farmer_id
     const { data: cartItems, error: cartError } = await supabase
       .from('carts')
-      .select(`*, products(id, name, price, unit, stock, farmer_id, image_urls)`)
+      .select(`
+        *,
+        products(id, name, price, unit, stock, farmer_id, image_urls)
+      `)
       .in('id', cartItemIds)
       .eq('user_id', userId)
 
@@ -29,12 +33,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cart tidak valid' }, { status: 400 })
     }
 
+    // Validasi stok
     for (const item of cartItems) {
       if (!item.products) continue
       if (item.quantity > item.products.stock) {
         return NextResponse.json({ error: `Stok ${item.products.name} tidak cukup` }, { status: 400 })
       }
     }
+
+    // Debug: log farmer_id untuk cek
+    console.log('Cart items farmer_ids:', cartItems.map(i => ({
+      product: i.products?.name,
+      farmer_id: i.products?.farmer_id,
+    })))
 
     const orderNumber = `KT${Date.now().toString().slice(-8)}`
     const midtransOrderId = `${orderNumber}-${Date.now()}`
@@ -65,23 +76,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gagal membuat order' }, { status: 500 })
     }
 
-    const orderItems = cartItems.map(item => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      farmer_id: item.products?.farmer_id ?? null,
-      product_name: item.products?.name ?? '',
-      price: item.products?.price ?? 0,
-      unit: item.products?.unit ?? '',
-      quantity: item.quantity,
-      subtotal: (item.products?.price ?? 0) * item.quantity,
-    }))
+    // Pastikan farmer_id tersimpan — ambil langsung dari products.farmer_id
+    const orderItems = cartItems.map(item => {
+      const farmerId = item.products?.farmer_id ?? null
+      console.log(`Item ${item.products?.name}: farmer_id = ${farmerId}`)
+      return {
+        order_id: order.id,
+        product_id: item.products?.id ?? null,
+        farmer_id: farmerId,   // ← ini kunci utama
+        product_name: item.products?.name ?? '',
+        price: item.products?.price ?? 0,
+        unit: item.products?.unit ?? '',
+        quantity: item.quantity,
+        subtotal: (item.products?.price ?? 0) * item.quantity,
+      }
+    })
 
-    const { error: orderItemsError } = await supabase.from('order_items').insert(orderItems)
+    const { error: orderItemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems)
+
     if (orderItemsError) {
       console.error('Gagal insert order items:', orderItemsError)
       return NextResponse.json({ error: 'Gagal menyimpan item order' }, { status: 500 })
     }
 
+    // Buat Midtrans Snap token
     const { token: snapToken } = await (snap as any).createTransaction({
       transaction_details: {
         order_id: midtransOrderId,
@@ -98,7 +118,7 @@ export async function POST(req: NextRequest) {
       },
       item_details: [
         ...cartItems.map(item => ({
-          id: item.product_id,
+          id: item.products?.id ?? 'prod',
           name: item.products?.name ?? 'Produk',
           price: item.products?.price ?? 0,
           quantity: item.quantity,
@@ -112,16 +132,21 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const { error: updateOrderError } = await supabase
+    await supabase
       .from('orders')
       .update({ midtrans_token: snapToken })
       .eq('id', order.id)
 
-    if (updateOrderError) {
-      console.error('Gagal simpan midtrans token:', updateOrderError)
-      return NextResponse.json({ error: 'Gagal menyimpan token pembayaran' }, { status: 500 })
+    // Kurangi stok produk
+    for (const item of cartItems) {
+      if (!item.products?.id) continue
+      await supabase
+        .from('products')
+        .update({ stock: item.products.stock - item.quantity })
+        .eq('id', item.products.id)
     }
 
+    // Hapus dari keranjang
     await supabase.from('carts').delete().in('id', cartItemIds)
 
     return NextResponse.json({ snapToken, orderId: order.id })
