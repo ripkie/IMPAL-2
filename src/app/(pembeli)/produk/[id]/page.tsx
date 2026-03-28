@@ -26,6 +26,22 @@ export default async function ProdukDetailPage({
     .neq('id', id)
     .limit(4)
 
+  // Ambil reviews produk ini (join dengan profiles untuk nama reviewer)
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select(`
+      id, rating, comment, created_at,
+      profiles(id, full_name, avatar_url)
+    `)
+    .eq('product_id', id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  // Hitung rata-rata rating
+  const avgRating = reviews && reviews.length > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0
+
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
@@ -33,6 +49,8 @@ export default async function ProdukDetailPage({
       product={product}
       produkLain={produkLain ?? []}
       userId={user?.id ?? null}
+      reviews={reviews ?? []}
+      avgRating={avgRating}
     />
   )
 }

@@ -11,52 +11,83 @@ const snap = new MidtransClient.Snap({
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
-    const body = await req.json()
 
+    // SECURITY: user ID SELALU dari session server, TIDAK dari request body
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await req.json()
     const {
-      userId, cartItemIds, shippingName, shippingPhone,
-      shippingAddress, shippingCourier, shippingCost,
-      subtotal, total, notes,
+      cartItemIds,
+      shippingName,
+      shippingPhone,
+      shippingAddress,
+      shippingCourier,
+      shippingCost,
+      subtotal,
+      total,
+      notes,
     } = body
 
-    // Ambil cart items + data produk lengkap termasuk farmer_id
+    // Validasi input dasar
+    if (!cartItemIds?.length || !shippingName || !shippingAddress || !total) {
+      return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
+    }
+
+    // Ambil cart items milik user yang login (RLS otomatis filter by user_id)
     const { data: cartItems, error: cartError } = await supabase
       .from('carts')
       .select(`
-        *,
-        products(id, name, price, unit, stock, farmer_id, image_urls)
+        id,
+        quantity,
+        product_id,
+        products (
+          id,
+          name,
+          price,
+          unit,
+          stock,
+          farmer_id
+        )
       `)
       .in('id', cartItemIds)
-      .eq('user_id', userId)
+      // SECURITY: pastikan cart milik user yang login
+      .eq('user_id', user.id)
 
     if (cartError || !cartItems?.length) {
       return NextResponse.json({ error: 'Cart tidak valid' }, { status: 400 })
     }
 
-    // Validasi stok
+    // Validasi stok semua item sebelum proses
     for (const item of cartItems) {
-      if (!item.products) continue
-      if (item.quantity > item.products.stock) {
-        return NextResponse.json({ error: `Stok ${item.products.name} tidak cukup` }, { status: 400 })
+      const product = item.products as any
+      if (!product) {
+        return NextResponse.json({ error: 'Produk tidak ditemukan' }, { status: 400 })
+      }
+      if (item.quantity > product.stock) {
+        return NextResponse.json(
+          { error: `Stok ${product.name} tidak cukup (sisa: ${product.stock})` },
+          { status: 400 }
+        )
       }
     }
 
-    // Debug: log farmer_id untuk cek
-    console.log('Cart items farmer_ids:', cartItems.map(i => ({
-      product: i.products?.name,
-      farmer_id: i.products?.farmer_id,
-    })))
+    // Generate order number unik
+    const timestamp = Date.now()
+    const orderNumber = `KT${timestamp.toString().slice(-8)}`
+    const midtransOrderId = `${orderNumber}-${timestamp}`
 
-    const orderNumber = `KT${Date.now().toString().slice(-8)}`
-    const midtransOrderId = `${orderNumber}-${Date.now()}`
-
+    // INSERT order — RLS akan validasi buyer_id = auth.uid() otomatis
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        buyer_id: userId,
+        buyer_id: user.id,        // SECURITY: dari server, bukan dari body
         order_number: orderNumber,
         midtrans_order_id: midtransOrderId,
         status: 'pending',
+        payment_status: 'unpaid',
         shipping_name: shippingName,
         shipping_phone: shippingPhone,
         shipping_address: shippingAddress,
@@ -65,73 +96,88 @@ export async function POST(req: NextRequest) {
         subtotal,
         discount: 0,
         total_amount: total,
-        payment_status: 'unpaid',
-        notes: notes || null,
+        notes: notes?.trim() || null,
       })
-      .select()
+      .select('id')
       .single()
 
     if (orderError || !order) {
-      console.error('Gagal membuat order:', orderError)
+      console.error('[checkout] Gagal insert order:', orderError?.message)
       return NextResponse.json({ error: 'Gagal membuat order' }, { status: 500 })
     }
 
-    // Pastikan farmer_id tersimpan — ambil langsung dari products.farmer_id
-    const orderItems = cartItems.map(item => {
-      const farmerId = item.products?.farmer_id ?? null
-      console.log(`Item ${item.products?.name}: farmer_id = ${farmerId}`)
+    // Siapkan order items dengan farmer_id dari data produk (server-side)
+    const orderItemsPayload = cartItems.map(item => {
+      const product = item.products as any
       return {
         order_id: order.id,
-        product_id: item.products?.id ?? null,
-        farmer_id: farmerId,   // ← ini kunci utama
-        product_name: item.products?.name ?? '',
-        price: item.products?.price ?? 0,
-        unit: item.products?.unit ?? '',
+        product_id: product.id,
+        farmer_id: product.farmer_id,   // dari DB, bukan dari client
+        product_name: product.name,
+        price: product.price,
+        unit: product.unit,
         quantity: item.quantity,
-        subtotal: (item.products?.price ?? 0) * item.quantity,
+        subtotal: product.price * item.quantity,
       }
     })
 
-    const { error: orderItemsError } = await supabase
+    // INSERT order items
+    const { error: itemsError } = await supabase
       .from('order_items')
-      .insert(orderItems)
+      .insert(orderItemsPayload)
 
-    if (orderItemsError) {
-      console.error('Gagal insert order items:', orderItemsError)
+    if (itemsError) {
+      console.error('[checkout] Gagal insert order items:', itemsError?.message)
+      // Rollback: hapus order yang sudah dibuat
+      await supabase.from('orders').delete().eq('id', order.id)
       return NextResponse.json({ error: 'Gagal menyimpan item order' }, { status: 500 })
     }
 
     // Buat Midtrans Snap token
-    const { token: snapToken } = await (snap as any).createTransaction({
-      transaction_details: {
-        order_id: midtransOrderId,
-        gross_amount: total,
-      },
-      customer_details: {
-        first_name: shippingName,
-        phone: shippingPhone,
-        shipping_address: {
+    let snapToken: string
+    try {
+      const midtransRes = await (snap as any).createTransaction({
+        transaction_details: {
+          order_id: midtransOrderId,
+          gross_amount: total,
+        },
+        customer_details: {
           first_name: shippingName,
           phone: shippingPhone,
-          address: shippingAddress,
+          shipping_address: {
+            first_name: shippingName,
+            phone: shippingPhone,
+            address: shippingAddress,
+          },
         },
-      },
-      item_details: [
-        ...cartItems.map(item => ({
-          id: item.products?.id ?? 'prod',
-          name: item.products?.name ?? 'Produk',
-          price: item.products?.price ?? 0,
-          quantity: item.quantity,
-        })),
-        {
-          id: 'shipping',
-          name: `Ongkir (${shippingCourier})`,
-          price: shippingCost,
-          quantity: 1,
-        },
-      ],
-    })
+        item_details: [
+          ...cartItems.map(item => {
+            const p = item.products as any
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              quantity: item.quantity,
+            }
+          }),
+          {
+            id: 'shipping',
+            name: `Ongkir (${shippingCourier})`,
+            price: shippingCost,
+            quantity: 1,
+          },
+        ],
+      })
+      snapToken = midtransRes.token
+    } catch (midtransErr: any) {
+      console.error('[checkout] Midtrans error:', midtransErr?.message)
+      // Rollback order dan items
+      await supabase.from('order_items').delete().eq('order_id', order.id)
+      await supabase.from('orders').delete().eq('id', order.id)
+      return NextResponse.json({ error: 'Gagal membuat token pembayaran' }, { status: 500 })
+    }
 
+    // Simpan snap token ke order
     await supabase
       .from('orders')
       .update({ midtrans_token: snapToken })
@@ -139,19 +185,21 @@ export async function POST(req: NextRequest) {
 
     // Kurangi stok produk
     for (const item of cartItems) {
-      if (!item.products?.id) continue
+      const product = item.products as any
       await supabase
         .from('products')
-        .update({ stock: item.products.stock - item.quantity })
-        .eq('id', item.products.id)
+        .update({ stock: product.stock - item.quantity })
+        .eq('id', product.id)
+        .eq('farmer_id', product.farmer_id) // extra safety check
     }
 
     // Hapus dari keranjang
     await supabase.from('carts').delete().in('id', cartItemIds)
 
     return NextResponse.json({ snapToken, orderId: order.id })
+
   } catch (err: any) {
-    console.error('Checkout error:', err)
-    return NextResponse.json({ error: err.message ?? 'Server error' }, { status: 500 })
+    console.error('[checkout] Unexpected error:', err?.message)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

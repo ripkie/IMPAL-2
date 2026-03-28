@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft, ShoppingCart, Plus, Minus, Check,
-  Leaf, Star, Package, Store, ChevronRight
+  Leaf, Star, Package, Store, ChevronRight, MessageSquare
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,19 +22,45 @@ interface Product {
   created_at: string
 }
 
+interface Review {
+  id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  profiles?: { id: string; full_name: string | null; avatar_url: string | null } | null
+}
+
 interface Props {
   product: Product
   produkLain: Product[]
   userId: string | null
+  reviews: Review[]
+  avgRating: number
 }
 
-export default function ProdukDetailClient({ product, produkLain, userId }: Props) {
+// Distribusi bintang
+function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
+  const pct = total > 0 ? (count / total) * 100 : 0
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+      <span style={{ fontSize: '12px', color: '#6B7C6A', width: '12px', textAlign: 'right' }}>{star}</span>
+      <Star size={11} color="#FFB347" fill="#FFB347" />
+      <div style={{ flex: 1, height: '6px', background: '#f3f4f6', borderRadius: '99px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', background: '#FFB347', borderRadius: '99px', width: `${pct}%`, transition: 'width 0.3s' }} />
+      </div>
+      <span style={{ fontSize: '11px', color: '#9CA3AF', width: '16px' }}>{count}</span>
+    </div>
+  )
+}
+
+export default function ProdukDetailClient({ product, produkLain, userId, reviews, avgRating }: Props) {
   const router = useRouter()
   const [qty, setQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [showAllReviews, setShowAllReviews] = useState(false)
 
   function showToast(msg: string) {
     setToast(msg)
@@ -47,22 +73,15 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
     const supabase = createClient()
 
     const { data: existing } = await supabase
-      .from('carts')
-      .select('id, quantity')
-      .eq('user_id', userId)
-      .eq('product_id', product.id)
-      .single()
+      .from('carts').select('id, quantity')
+      .eq('user_id', userId).eq('product_id', product.id).single()
 
     if (existing) {
       await supabase.from('carts')
         .update({ quantity: existing.quantity + qty, updated_at: new Date().toISOString() })
         .eq('id', existing.id)
     } else {
-      await supabase.from('carts').insert({
-        user_id: userId,
-        product_id: product.id,
-        quantity: qty,
-      })
+      await supabase.from('carts').insert({ user_id: userId, product_id: product.id, quantity: qty })
     }
 
     setAdding(false)
@@ -81,11 +100,19 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
   const farmerName = product.profiles?.full_name ?? 'Petani KiTani'
   const isHabis = product.stock === 0
 
+  // Hitung distribusi rating
+  const ratingDist = [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: reviews.filter(r => r.rating === star).length,
+  }))
+
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3)
+
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
       <div className="max-w-3xl mx-auto pb-32">
 
-        {/* Back button */}
+        {/* Back */}
         <div className="px-4 pt-4 mb-2">
           <button onClick={() => router.back()}
             className="flex items-center gap-2 text-sm font-medium"
@@ -94,18 +121,12 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
           </button>
         </div>
 
-        {/* Gambar produk */}
+        {/* Gambar */}
         <div className="px-4 mb-4">
           <div className="relative w-full rounded-3xl overflow-hidden"
             style={{ height: 300, background: '#e8f5e9' }}>
             {images.length > 0 ? (
-              <Image
-                src={images[activeImg]}
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-              />
+              <Image src={images[activeImg]} alt={product.name} fill className="object-cover" priority />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Leaf size={64} color="#71BC68" />
@@ -125,8 +146,6 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
               </div>
             )}
           </div>
-
-          {/* Thumbnail gambar */}
           {images.length > 1 && (
             <div className="flex gap-2 mt-3">
               {images.map((img, i) => (
@@ -144,19 +163,32 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
         <div className="px-4">
           <div className="bg-white rounded-3xl p-5 mb-4"
             style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-
             <h1 className="text-xl font-bold mb-1"
               style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
               {product.name}
             </h1>
 
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center gap-1">
-                <Star size={13} color="#FFB347" fill="#FFB347" />
-                <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>
-                  Terjual {product.sold_count}
-                </span>
-              </div>
+              {/* Rating summary */}
+              {reviews.length > 0 ? (
+                <div className="flex items-center gap-1">
+                  <Star size={13} color="#FFB347" fill="#FFB347" />
+                  <span className="text-xs font-bold" style={{ color: '#0A4C3E' }}>
+                    {avgRating.toFixed(1)}
+                  </span>
+                  <span className="text-xs" style={{ color: '#6B7C6A' }}>
+                    ({reviews.length} ulasan)
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Star size={13} color="#e5e7eb" fill="#e5e7eb" />
+                  <span className="text-xs" style={{ color: '#9CA3AF' }}>Belum ada ulasan</span>
+                </div>
+              )}
+              <span className="text-xs" style={{ color: '#6B7C6A' }}>
+                Terjual {product.sold_count}
+              </span>
               <span className="text-xs" style={{ color: '#6B7C6A' }}>
                 Stok: <span className="font-bold" style={{ color: product.stock <= 5 ? '#856404' : '#0A4C3E' }}>
                   {product.stock} {product.unit}
@@ -193,6 +225,146 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
             <ChevronRight size={16} color="#9CA3AF" />
           </div>
 
+          {/* ── SECTION ULASAN ── */}
+          <div className="bg-white rounded-2xl mb-4 overflow-hidden"
+            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: reviews.length > 0 ? '1px solid #f3f4f6' : 'none' }}>
+              <div className="flex items-center gap-2">
+                <MessageSquare size={16} color="#71BC68" />
+                <h2 className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
+                  Ulasan Pembeli
+                </h2>
+                {reviews.length > 0 && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: '#D4EDDA', color: '#155724' }}>
+                    {reviews.length}
+                  </span>
+                )}
+              </div>
+              {reviews.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <Star size={14} color="#FFB347" fill="#FFB347" />
+                  <span className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
+                    {avgRating.toFixed(1)}
+                  </span>
+                  <span className="text-xs" style={{ color: '#6B7C6A' }}>/5</span>
+                </div>
+              )}
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="text-center py-10 px-4">
+                <Star size={32} color="#e5e7eb" fill="#e5e7eb" className="mx-auto mb-3" />
+                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>Belum ada ulasan</p>
+                <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
+                  Jadilah yang pertama mengulas produk ini
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Distribusi rating */}
+                <div className="px-5 py-4" style={{ borderBottom: '1px solid #f9f9f9' }}>
+                  <div className="flex gap-5 items-center">
+                    {/* Angka besar */}
+                    <div className="text-center shrink-0">
+                      <p style={{ fontFamily: 'Sora, sans-serif', fontSize: '36px', fontWeight: 700, color: '#0A4C3E', lineHeight: 1, margin: 0 }}>
+                        {avgRating.toFixed(1)}
+                      </p>
+                      <div className="flex justify-center gap-0.5 my-1">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} size={12} color="#FFB347"
+                            fill={avgRating >= s ? '#FFB347' : avgRating >= s - 0.5 ? '#FFD580' : 'none'} />
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>
+                        {reviews.length} ulasan
+                      </p>
+                    </div>
+                    {/* Bar chart */}
+                    <div style={{ flex: 1 }}>
+                      {ratingDist.map(({ star, count }) => (
+                        <RatingBar key={star} star={star} count={count} total={reviews.length} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* List ulasan */}
+                <div className="divide-y" style={{ borderTop: '1px solid #f3f4f6' }}>
+                  {displayedReviews.map(review => {
+                    const name = review.profiles?.full_name ?? 'Pembeli'
+                    const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+                    const date = new Date(review.created_at).toLocaleDateString('id-ID', {
+                      day: 'numeric', month: 'short', year: 'numeric'
+                    })
+
+                    return (
+                      <div key={review.id} className="px-5 py-4">
+                        <div className="flex items-start gap-3">
+                          {/* Avatar */}
+                          <div style={{
+                            width: '36px', height: '36px', borderRadius: '50%',
+                            background: '#0A4C3E', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', flexShrink: 0, fontSize: '12px',
+                            fontWeight: 700, color: '#71BC68',
+                          }}>
+                            {initials}
+                          </div>
+
+                          <div style={{ flex: 1 }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <p style={{ fontSize: '13px', fontWeight: 600, color: '#0A4C3E', margin: 0 }}>
+                                {name}
+                              </p>
+                              <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>{date}</p>
+                            </div>
+
+                            {/* Stars */}
+                            <div className="flex gap-0.5 mb-2">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <Star key={s} size={13} color="#FFB347"
+                                  fill={review.rating >= s ? '#FFB347' : 'none'}
+                                  strokeWidth={1.5} />
+                              ))}
+                            </div>
+
+                            {review.comment && (
+                              <p style={{ fontSize: '13px', color: '#374151', lineHeight: 1.6, margin: 0 }}>
+                                {review.comment}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Tombol lihat semua */}
+                {reviews.length > 3 && (
+                  <div className="px-5 pb-4">
+                    <button
+                      onClick={() => setShowAllReviews(p => !p)}
+                      style={{
+                        width: '100%', padding: '10px', borderRadius: '12px',
+                        fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                        background: '#F4FAF3', color: '#0A4C3E',
+                        border: '1px solid rgba(113,188,104,0.2)',
+                        fontFamily: 'DM Sans, sans-serif',
+                      }}>
+                      {showAllReviews
+                        ? 'Sembunyikan ulasan'
+                        : `Lihat semua ${reviews.length} ulasan`}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Produk lain dari petani */}
           {produkLain.length > 0 && (
             <div className="mb-4">
@@ -209,9 +381,7 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
                       {p.image_urls?.[0] ? (
                         <img src={p.image_urls[0]} alt={p.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <Package size={24} color="#71BC68" />
-                      )}
+                      ) : <Package size={24} color="#71BC68" />}
                     </div>
                     <div className="p-2">
                       <p className="text-xs font-semibold line-clamp-1" style={{ color: '#0A4C3E' }}>{p.name}</p>
@@ -227,13 +397,11 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
         </div>
       </div>
 
-      {/* Bottom bar - qty + add to cart */}
+      {/* Bottom bar */}
       {!isHabis && (
         <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 px-4 py-3"
           style={{ background: 'white', borderTop: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 -4px 20px rgba(10,76,62,0.08)' }}>
           <div className="max-w-3xl mx-auto flex items-center gap-3">
-
-            {/* Qty selector */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-2xl"
               style={{ background: '#F4FAF3', border: '1px solid rgba(113,188,104,0.2)' }}>
               <button onClick={() => setQty(q => Math.max(1, q - 1))}
@@ -248,22 +416,17 @@ export default function ProdukDetailClient({ product, produkLain, userId }: Prop
                 <Plus size={13} color={qty >= product.stock ? '#9CA3AF' : '#71BC68'} />
               </button>
             </div>
-
-            {/* Total */}
             <div className="flex-1">
               <p className="text-xs" style={{ color: '#6B7C6A' }}>Total</p>
               <p className="text-base font-bold" style={{ color: '#0A4C3E' }}>
                 Rp {(product.price * qty).toLocaleString('id-ID')}
               </p>
             </div>
-
-            {/* Buttons */}
             <button onClick={handleAddToCart} disabled={adding || added}
               className="px-4 py-2.5 rounded-2xl font-bold text-sm transition"
               style={{ background: added ? '#D4EDDA' : '#F4FAF3', color: added ? '#155724' : '#0A4C3E', border: '1.5px solid rgba(10,76,62,0.15)' }}>
               {added ? <Check size={18} /> : <ShoppingCart size={18} />}
             </button>
-
             <button onClick={handleBuyNow} disabled={adding}
               className="px-5 py-2.5 rounded-2xl font-bold text-sm transition hover:opacity-90"
               style={{ background: '#0A4C3E', color: '#71BC68' }}>
