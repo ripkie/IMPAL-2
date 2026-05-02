@@ -142,7 +142,3 @@ Gunakan Midtrans sandbox untuk testing
 
 All rights reserved.
 
-
-Kalau mau next step, aku bisa:
-- bikin versi README yang “wow” (dengan badge + preview UI + demo link)
-- atau bantu bikin struktur repo biar kelihatan profesional di GitHub 👍
