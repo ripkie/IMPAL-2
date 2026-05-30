@@ -26,13 +26,11 @@ export async function POST(req: NextRequest) {
       shippingAddress,
       shippingCourier,
       shippingCost,
-      subtotal,
-      total,
       notes,
     } = body
 
     // Validasi input dasar
-    if (!cartItemIds?.length || !shippingName || !shippingAddress || !total) {
+    if (!cartItemIds?.length || !shippingName || !shippingAddress) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
     }
 
@@ -74,6 +72,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // SECURITY: hitung subtotal & total dari DB — tidak percaya angka dari client
+    const computedSubtotal = cartItems.reduce((sum, item) => {
+      const product = item.products as any
+      return sum + (product.price * item.quantity)
+    }, 0)
+    const computedTotal = computedSubtotal + (shippingCost ?? 0)
+
     // Generate order number unik
     const timestamp = Date.now()
     const orderNumber = `KT${timestamp.toString().slice(-8)}`
@@ -93,9 +98,9 @@ export async function POST(req: NextRequest) {
         shipping_address: shippingAddress,
         shipping_courier: shippingCourier,
         shipping_cost: shippingCost,
-        subtotal,
+        subtotal: computedSubtotal,
         discount: 0,
-        total_amount: total,
+        total_amount: computedTotal,
         notes: notes?.trim() || null,
       })
       .select('id')
@@ -139,7 +144,7 @@ export async function POST(req: NextRequest) {
       const midtransRes = await (snap as any).createTransaction({
         transaction_details: {
           order_id: midtransOrderId,
-          gross_amount: total,
+          gross_amount: computedTotal,
         },
         customer_details: {
           first_name: shippingName,
