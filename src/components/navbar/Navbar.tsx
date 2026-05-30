@@ -70,7 +70,8 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="h-[72px]" />
+      {/* Spacer — sama dengan tinggi navbar (68px) */}
+      <div style={{ height: '68px' }} />
 
       {/* Top Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"

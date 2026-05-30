@@ -32,7 +32,7 @@ const BANNERS = [
   {
     id: 'b1',
     tag: '🌿 Panen Hari Ini',
-    tagBg: 'rgba(113,188,104,0.2)',
+    tagBg: 'rgba(113,188,104,0.25)',
     tagColor: '#71BC68',
     headline: 'Sayuran Segar\nLangsung dari Kebun',
     sub: 'Hemat hingga 40% dibanding supermarket. Kualitas premium, dipanen pagi, tiba hari ini.',
@@ -43,7 +43,7 @@ const BANNERS = [
   {
     id: 'b2',
     tag: '🚚 Gratis Ongkir',
-    tagBg: 'rgba(59,130,246,0.2)',
+    tagBg: 'rgba(59,130,246,0.25)',
     tagColor: '#93C5FD',
     headline: 'Gratis Ongkir\nMin. Rp 75.000',
     sub: 'Berlaku seluruh Indonesia. Pesan pagi, sayuran segar tiba di rumahmu sore ini.',
@@ -54,7 +54,7 @@ const BANNERS = [
   {
     id: 'b3',
     tag: '⚡ Flash Sale',
-    tagBg: 'rgba(245,158,11,0.2)',
+    tagBg: 'rgba(245,158,11,0.25)',
     tagColor: '#FCD34D',
     headline: 'Diskon 30%\nSayuran Pilihan',
     sub: 'Promo terbatas hanya hari ini! Stok terbatas, buruan sebelum habis.',
@@ -81,10 +81,7 @@ function BannerSlider({ onCta }: { onCta: (href: string) => void }) {
     timer.current = setInterval(() => setIdx(p => (p + 1) % BANNERS.length), 5000)
   }
 
-  useEffect(() => {
-    resetTimer()
-    return () => clearInterval(timer.current)
-  }, [])
+  useEffect(() => { resetTimer(); return () => clearInterval(timer.current) }, [])
 
   function prev() { setIdx(p => (p - 1 + BANNERS.length) % BANNERS.length); resetTimer() }
   function next() { setIdx(p => (p + 1) % BANNERS.length); resetTimer() }
@@ -92,58 +89,87 @@ function BannerSlider({ onCta }: { onCta: (href: string) => void }) {
   const b = BANNERS[idx]
 
   return (
-    <div className="relative overflow-hidden rounded-2xl md:rounded-3xl select-none"
-      style={{ height: '320px' }}
+    <div
+      className="relative overflow-hidden rounded-2xl select-none"
+      style={{ height: 'clamp(200px, 45vw, 340px)' }}
       onTouchStart={e => { touchX.current = e.touches[0].clientX }}
       onTouchEnd={e => {
         const diff = touchX.current - e.changedTouches[0].clientX
-        if (Math.abs(diff) > 50) diff > 0 ? next() : prev()
-      }}>
+        if (Math.abs(diff) > 40) diff > 0 ? next() : prev()
+      }}
+    >
+      <Image src={b.image} alt={b.headline} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 75vw" />
 
-      {/* Image */}
-      <Image src={b.image} alt={b.headline} fill className="object-cover transition-opacity duration-700" priority />
+      {/* gradient — lebih gelap di mobile supaya teks selalu terbaca */}
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(to right, rgba(5,30,20,0.97) 0%, rgba(5,30,20,0.9) 45%, rgba(5,30,20,0.5) 72%, rgba(5,30,20,0.05) 100%)'
+      }} />
 
-      {/* Overlay */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(5,35,25,0.95) 0%, rgba(5,35,25,0.85) 40%, rgba(5,35,25,0.4) 70%, rgba(5,35,25,0.1) 100%)' }} />
-
-      {/* Content */}
-      <div className="absolute top-0 left-0 bottom-0 flex flex-col justify-center px-8 md:px-12" style={{ width: '60%' }}>
-        <span className="inline-block text-xs font-bold px-3 py-1.5 rounded-full mb-4 w-fit"
-          style={{ background: b.tagBg, color: b.tagColor }}>
+      {/* content — pakai padding responsif, max-width biar tidak tabrakan foto */}
+      <div className="absolute inset-0 flex flex-col justify-center px-5 sm:px-8 md:px-10" style={{ maxWidth: '65%' }}>
+        <span
+          className="inline-block text-xs font-bold px-2.5 py-1 rounded-full mb-2 sm:mb-3 w-fit"
+          style={{ background: b.tagBg, color: b.tagColor, fontSize: 'clamp(10px, 2.2vw, 13px)' }}
+        >
           {b.tag}
         </span>
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight whitespace-pre-line"
-          style={{ fontFamily: 'Sora, sans-serif' }}>
+
+        <h2
+          className="font-bold text-white leading-tight whitespace-pre-line mb-2 sm:mb-3"
+          style={{
+            fontFamily: 'Sora, sans-serif',
+            fontSize: 'clamp(16px, 4vw, 32px)',
+          }}
+        >
           {b.headline}
         </h2>
-        <p className="text-sm mb-6 hidden sm:block" style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.65 }}>
+
+        <p
+          className="hidden sm:block mb-4"
+          style={{ color: 'rgba(255,255,255,0.78)', lineHeight: 1.6, fontSize: 'clamp(11px, 1.8vw, 14px)' }}
+        >
           {b.sub}
         </p>
-        <button onClick={() => onCta(b.ctaHref)}
-          className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm w-fit transition hover:opacity-90"
-          style={{ background: '#71BC68', color: '#0A4C3E' }}>
-          {b.cta} <ArrowRight size={15} />
+
+        <button
+          onClick={() => onCta(b.ctaHref)}
+          className="flex items-center gap-1.5 rounded-full font-bold w-fit transition hover:opacity-90 active:scale-95"
+          style={{
+            background: '#71BC68',
+            color: '#0A4C3E',
+            padding: 'clamp(8px,1.8vw,12px) clamp(14px,3.5vw,24px)',
+            fontSize: 'clamp(11px, 2vw, 14px)',
+          }}
+        >
+          {b.cta} <ArrowRight size={14} />
         </button>
       </div>
 
-      {/* Prev / Next */}
-      <button onClick={prev}
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.35)' }}>
+      {/* prev/next — hidden on very small screens */}
+      <button
+        onClick={prev}
+        className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.35)' }}
+      >
         <ChevronLeft size={16} color="white" />
       </button>
-      <button onClick={next}
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.35)' }}>
+      <button
+        onClick={next}
+        className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.35)' }}
+      >
         <ChevronRight size={16} color="white" />
       </button>
 
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+      {/* dots */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
         {BANNERS.map((_, i) => (
-          <button key={i} onClick={() => { setIdx(i); resetTimer() }}
+          <button
+            key={i}
+            onClick={() => { setIdx(i); resetTimer() }}
             className="rounded-full transition-all duration-300"
-            style={{ width: i === idx ? 24 : 6, height: 6, background: i === idx ? 'white' : 'rgba(255,255,255,0.4)' }} />
+            style={{ width: i === idx ? 20 : 5, height: 5, background: i === idx ? 'white' : 'rgba(255,255,255,0.4)' }}
+          />
         ))}
       </div>
     </div>
@@ -171,58 +197,61 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
   }
 
   function toggleWishlist(id: string) {
-    setWishlist(prev => {
-      const n = new Set(prev)
-      n.has(id) ? n.delete(id) : n.add(id)
-      return n
-    })
+    setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
 
       {/* ── HERO ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pt-5 pb-8">
-        <div className="grid md:grid-cols-[1fr_260px] gap-4">
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pt-4 pb-5">
 
-          {/* Banner slider */}
-          <BannerSlider onCta={(href) => router.push(href)} />
+        {/* Banner + side cards */}
+        <div className="grid gap-3" style={{ gridTemplateColumns: '1fr' }}>
+          {/* Banner (full width on mobile, 3/4 on desktop) */}
+          <div className="md:hidden">
+            <BannerSlider onCta={href => router.push(href)} />
+          </div>
 
-          {/* Side cards — desktop only */}
-          <div className="hidden md:flex flex-col gap-3">
-            {/* Flash Sale card */}
-            <div className="flex-1 rounded-2xl overflow-hidden relative cursor-pointer hover:opacity-95 transition"
-              onClick={() => router.push('/produk?sort=terlaris')}
-              style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #1a6b55 100%)', minHeight: '140px' }}>
-              <div className="p-4 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap size={16} color="#FCD34D" fill="#FCD34D" />
+          {/* Desktop: banner + side cards side by side */}
+          <div className="hidden md:grid gap-3" style={{ gridTemplateColumns: '1fr 220px' }}>
+            <BannerSlider onCta={href => router.push(href)} />
+
+            <div className="flex flex-col gap-3">
+              {/* Flash sale mini card */}
+              <div
+                className="flex-1 rounded-2xl cursor-pointer hover:opacity-95 transition p-4 flex flex-col justify-between"
+                onClick={() => router.push('/produk?sort=terlaris')}
+                style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #1a6b55 100%)', minHeight: '130px' }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Zap size={15} color="#FCD34D" fill="#FCD34D" />
                   <span className="text-xs font-bold" style={{ color: '#FCD34D' }}>Flash Sale</span>
                 </div>
                 <div>
-                  <p className="font-bold text-white text-base" style={{ fontFamily: 'Sora, sans-serif' }}>Diskon s/d 40%</p>
-                  <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.65)' }}>Produk pilihan hari ini</p>
-                  <div className="flex items-center gap-1 mt-3 text-xs font-semibold" style={{ color: '#71BC68' }}>
-                    Lihat promo <ArrowRight size={12} />
+                  <p className="font-bold text-white text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>Diskon s/d 40%</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>Produk pilihan hari ini</p>
+                  <div className="flex items-center gap-1 mt-2.5 text-xs font-semibold" style={{ color: '#71BC68' }}>
+                    Lihat promo <ArrowRight size={11} />
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Daftar jadi petani card */}
-            <div className="flex-1 rounded-2xl overflow-hidden relative cursor-pointer hover:opacity-95 transition"
-              onClick={() => router.push('/register')}
-              style={{ background: 'linear-gradient(135deg, #1a6b3a 0%, #2d9e5a 100%)', minHeight: '140px' }}>
-              <div className="p-4 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-2">
-                  <Sprout size={16} color="white" />
+              {/* Petani mini card */}
+              <div
+                className="flex-1 rounded-2xl cursor-pointer hover:opacity-95 transition p-4 flex flex-col justify-between"
+                onClick={() => router.push('/register')}
+                style={{ background: 'linear-gradient(135deg, #155724 0%, #2d9e5a 100%)', minHeight: '130px' }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Sprout size={15} color="white" />
                   <span className="text-xs font-bold text-white">Untuk Petani</span>
                 </div>
                 <div>
-                  <p className="font-bold text-white text-base" style={{ fontFamily: 'Sora, sans-serif' }}>Jual Hasil Panen</p>
-                  <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.65)' }}>Bergabung gratis, tanpa biaya awal</p>
-                  <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-white">
-                    Daftar sekarang <ArrowRight size={12} />
+                  <p className="font-bold text-white text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>Jual Hasil Panen</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>Daftar gratis, tanpa biaya</p>
+                  <div className="flex items-center gap-1 mt-2.5 text-xs font-semibold text-white">
+                    Daftar sekarang <ArrowRight size={11} />
                   </div>
                 </div>
               </div>
@@ -230,40 +259,45 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
           </div>
         </div>
 
-        {/* Stats strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+        {/* Stats — 4 kolom di md+, 2x2 di sm, scrollable di xs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3">
           {STATS.map(s => (
-            <div key={s.label} className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl"
-              style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: '#F4FAF3' }}>
-                <s.icon size={18} color="#0A4C3E" />
+            <div
+              key={s.label}
+              className="flex items-center gap-2.5 bg-white px-3 py-2.5 rounded-xl"
+              style={{ border: '1px solid rgba(113,188,104,0.15)' }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F4FAF3' }}>
+                <s.icon size={16} color="#0A4C3E" />
               </div>
               <div>
-                <div className="font-bold text-sm" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>{s.value}</div>
-                <div className="text-xs" style={{ color: '#6B7C6A' }}>{s.label}</div>
+                <div className="font-bold text-sm leading-none" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>{s.value}</div>
+                <div className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>{s.label}</div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── KEUNGGULAN ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pb-8">
-        <div className="grid grid-cols-3 gap-3">
+      {/* ── KEUNGGULAN — 1 kolom di xs, 3 kolom di sm+ ── */}
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {[
-            { icon: Leaf, title: 'Organik & Segar', desc: 'Dipanen langsung, tiba 24 jam', color: '#D4EDDA', iconColor: '#155724' },
+            { icon: Leaf, title: 'Organik & Segar', desc: 'Dipanen langsung, tiba dalam 24 jam', color: '#D4EDDA', iconColor: '#155724' },
             { icon: Truck, title: 'Gratis Ongkir', desc: 'Min. pembelian Rp 75.000', color: '#DBEAFE', iconColor: '#1D4ED8' },
-            { icon: ShieldCheck, title: 'Petani Terverifikasi', desc: 'Semua petani sudah diverifikasi', color: '#FEF9C3', iconColor: '#854D0E' },
+            { icon: ShieldCheck, title: 'Petani Terverifikasi', desc: 'Semua petani sudah melalui verifikasi', color: '#FEF9C3', iconColor: '#854D0E' },
           ].map(item => (
-            <div key={item.title} className="flex flex-col sm:flex-row items-center sm:items-start gap-3 p-3 md:p-4 bg-white rounded-2xl"
-              style={{ border: '1px solid rgba(113,188,104,0.12)' }}>
+            <div
+              key={item.title}
+              className="flex items-center gap-3 p-3 sm:p-4 bg-white rounded-2xl"
+              style={{ border: '1px solid rgba(113,188,104,0.12)' }}
+            >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: item.color }}>
                 <item.icon size={18} color={item.iconColor} />
               </div>
-              <div className="text-center sm:text-left">
+              <div>
                 <div className="font-semibold text-sm" style={{ color: '#0A4C3E' }}>{item.title}</div>
-                <div className="text-xs mt-0.5 hidden sm:block" style={{ color: '#6B7C6A' }}>{item.desc}</div>
+                <div className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>{item.desc}</div>
               </div>
             </div>
           ))}
@@ -271,83 +305,99 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
       </section>
 
       {/* ── KATEGORI ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-7">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-base sm:text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
             Kategori Produk
           </h2>
-          <button onClick={() => router.push('/produk')}
-            className="text-sm font-medium flex items-center gap-1 transition hover:gap-2"
-            style={{ color: '#71BC68' }}>
-            Semua <ArrowRight size={14} />
+          <button
+            onClick={() => router.push('/produk')}
+            className="text-sm font-medium flex items-center gap-1"
+            style={{ color: '#71BC68' }}
+          >
+            Semua <ArrowRight size={13} />
           </button>
         </div>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        {/* 3 kolom di mobile, 6 di md+ */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
           {categories.map(cat => {
             const cfg = CATEGORY_ICON[cat.slug] ?? CATEGORY_ICON['lainnya']
             const IconComp = cfg.icon
             return (
-              <button key={cat.id}
+              <button
+                key={cat.id}
                 onClick={() => router.push(`/produk?kategori=${cat.slug}`)}
-                className="flex flex-col items-center gap-2 p-3 md:p-4 bg-white rounded-2xl transition hover:-translate-y-1 hover:shadow-md group"
-                style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center transition group-hover:scale-110" style={{ background: cfg.bg }}>
-                  <IconComp size={24} color={cfg.color} />
+                className="flex flex-col items-center gap-1.5 p-2.5 sm:p-3 md:p-4 bg-white rounded-2xl transition active:scale-95 hover:-translate-y-0.5"
+                style={{ border: '1.5px solid rgba(113,188,104,0.15)' }}
+              >
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center" style={{ background: cfg.bg }}>
+                  <IconComp size={22} color={cfg.color} />
                 </div>
-                <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>{cat.name}</span>
+                <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#0A4C3E' }}>
+                  {cat.name}
+                </span>
               </button>
             )
           })}
         </div>
       </section>
 
-      {/* ── FLASH SALE BANNER STRIP ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
-        <div className="rounded-2xl px-5 py-4 flex items-center justify-between"
-          style={{ background: 'linear-gradient(90deg, #0A4C3E 0%, #0d6b55 100%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+      {/* ── FLASH SALE STRIP ── */}
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-7">
+        <div
+          className="rounded-2xl px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3"
+          style={{ background: 'linear-gradient(90deg, #0A4C3E 0%, #0d6b55 100%)' }}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: 'rgba(252,211,77,0.15)' }}>
-              <Zap size={20} color="#FCD34D" fill="#FCD34D" />
+              <Zap size={18} color="#FCD34D" fill="#FCD34D" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-white truncate" style={{ fontFamily: 'Sora, sans-serif' }}>
                 Flash Sale — Berakhir Malam Ini
               </p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              <p className="text-xs hidden sm:block" style={{ color: 'rgba(255,255,255,0.65)' }}>
                 Diskon hingga 40% untuk produk pilihan
               </p>
             </div>
           </div>
-          <button onClick={() => router.push('/produk?sort=terlaris')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition hover:opacity-90 shrink-0"
-            style={{ background: '#71BC68', color: '#0A4C3E' }}>
-            Lihat Promo <ArrowRight size={14} />
+          <button
+            onClick={() => router.push('/produk?sort=terlaris')}
+            className="flex items-center gap-1.5 rounded-full font-bold transition hover:opacity-90 active:scale-95 shrink-0"
+            style={{ background: '#71BC68', color: '#0A4C3E', padding: '8px 14px', fontSize: '13px' }}
+          >
+            <span className="hidden sm:inline">Lihat Promo</span>
+            <span className="sm:hidden">Lihat</span>
+            <ArrowRight size={13} />
           </button>
         </div>
       </section>
 
       {/* ── PRODUK TERLARIS ── */}
       {terlaris.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              <Star size={18} color="#71BC68" fill="#71BC68" /> Terlaris
+        <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-7">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-base sm:text-lg flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+              <Star size={16} color="#71BC68" fill="#71BC68" /> Terlaris
             </h2>
-            <button onClick={() => router.push('/produk?sort=terlaris')}
-              className="text-sm font-medium flex items-center gap-1 transition hover:gap-2"
-              style={{ color: '#71BC68' }}>
-              Lihat semua <ArrowRight size={14} />
+            <button
+              onClick={() => router.push('/produk?sort=terlaris')}
+              className="text-sm font-medium flex items-center gap-1"
+              style={{ color: '#71BC68' }}
+            >
+              Lihat semua <ArrowRight size={13} />
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {/* 2 kolom xs, 3 sm, 4 md, 6 lg */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3">
             {terlaris.map(product => (
               <div key={product.id} className="relative">
                 {addedId === product.id && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
                     style={{ background: 'rgba(113,188,104,0.92)' }}>
-                    <span className="text-white font-bold text-sm flex items-center gap-1">
-                      <Check size={16} strokeWidth={3} /> Ditambahkan
+                    <span className="text-white font-bold text-xs sm:text-sm flex items-center gap-1">
+                      <Check size={14} strokeWidth={3} /> Ditambahkan
                     </span>
                   </div>
                 )}
@@ -359,38 +409,40 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
       )}
 
       {/* ── PRODUK TERBARU ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-base sm:text-lg" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
             Produk Terbaru
           </h2>
-          <button onClick={() => router.push('/produk')}
-            className="text-sm font-medium flex items-center gap-1 transition hover:gap-2"
-            style={{ color: '#71BC68' }}>
-            Lihat semua <ArrowRight size={14} />
+          <button
+            onClick={() => router.push('/produk')}
+            className="text-sm font-medium flex items-center gap-1"
+            style={{ color: '#71BC68' }}
+          >
+            Lihat semua <ArrowRight size={13} />
           </button>
         </div>
 
         {products.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl"
-            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: '#D4EDDA' }}>
-              <Sprout size={32} color="#155724" />
+          <div className="text-center py-14 bg-white rounded-2xl" style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: '#D4EDDA' }}>
+              <Sprout size={28} color="#155724" />
             </div>
             <p className="font-semibold text-sm mb-1" style={{ color: '#0A4C3E' }}>Belum ada produk</p>
             <p className="text-xs" style={{ color: '#6B7C6A' }}>Petani sedang menyiapkan hasil panennya</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          /* 2 kolom xs, 3 md, 4 lg */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
             {products.map(product => (
               <div key={product.id} className="relative">
-                {/* Wishlist button */}
                 <button
                   onClick={() => toggleWishlist(product.id)}
-                  className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition"
-                  style={{ background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-                  <Heart size={14}
+                  className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center transition"
+                  style={{ background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }}
+                >
+                  <Heart
+                    size={13}
                     color={wishlist.has(product.id) ? '#ef4444' : '#9CA3AF'}
                     fill={wishlist.has(product.id) ? '#ef4444' : 'none'}
                   />
@@ -398,8 +450,8 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
                 {addedId === product.id && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl"
                     style={{ background: 'rgba(113,188,104,0.92)' }}>
-                    <span className="text-white font-bold text-sm flex items-center gap-1">
-                      <Check size={16} strokeWidth={3} /> Ditambahkan
+                    <span className="text-white font-bold text-xs sm:text-sm flex items-center gap-1">
+                      <Check size={14} strokeWidth={3} /> Ditambahkan
                     </span>
                   </div>
                 )}
@@ -410,45 +462,54 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
         )}
       </section>
 
-      {/* ── BANNER DAFTAR PETANI ── */}
-      <section className="max-w-6xl mx-auto px-4 md:px-6 pb-16">
-        <div className="relative overflow-hidden rounded-3xl"
-          style={{ background: 'linear-gradient(120deg, #0A4C3E 0%, #0d6b55 100%)' }}>
+      {/* ── BANNER PETANI ── */}
+      <section className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-20 md:pb-12">
+        <div
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl"
+          style={{ background: 'linear-gradient(120deg, #0A4C3E 0%, #0d6b55 100%)' }}
+        >
+          {/* Decorative blobs */}
+          <div className="absolute" style={{ width: 220, height: 220, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -70, right: 80 }} />
+          <div className="absolute" style={{ width: 130, height: 130, borderRadius: '50%', background: 'rgba(113,188,104,0.07)', bottom: -40, right: -20 }} />
 
-          {/* Decorative circles */}
-          <div className="absolute" style={{ width: 280, height: 280, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -80, right: 100 }} />
-          <div className="absolute" style={{ width: 160, height: 160, borderRadius: '50%', background: 'rgba(113,188,104,0.07)', bottom: -50, right: -30 }} />
-
-          <div className="relative flex flex-col md:flex-row items-center gap-8 px-8 md:px-12 py-10">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-xs font-bold"
-                style={{ background: 'rgba(113,188,104,0.2)', color: '#71BC68' }}>
-                <Sprout size={12} /> Untuk Para Petani
+          <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6 px-5 sm:px-8 md:px-10 py-8 md:py-10">
+            <div className="flex-1 min-w-0">
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mb-3 text-xs font-bold"
+                style={{ background: 'rgba(113,188,104,0.2)', color: '#71BC68' }}
+              >
+                <Sprout size={11} /> Untuk Para Petani
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight"
-                style={{ fontFamily: 'Sora, sans-serif' }}>
+              <h2
+                className="font-bold text-white mb-2 leading-tight"
+                style={{ fontFamily: 'Sora, sans-serif', fontSize: 'clamp(18px, 4vw, 28px)' }}
+              >
                 Jual Hasil Panen<br />
                 <span style={{ color: '#71BC68' }}>Langsung ke Pembeli</span>
               </h2>
-              <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.7 }}>
-                Bergabung dengan ribuan petani lokal di KiTani. Tanpa perantara,<br className="hidden md:block" />
-                harga lebih baik, pembayaran aman via Midtrans.
+              <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.65 }}>
+                Bergabung dengan ribuan petani lokal di KiTani. Tanpa perantara, harga lebih baik, pembayaran aman via Midtrans.
               </p>
-              <div className="flex gap-3 flex-wrap">
-                <button onClick={() => router.push('/register')}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
-                  style={{ background: '#71BC68', color: '#0A4C3E' }}>
-                  Daftar Jadi Petani <ArrowRight size={16} />
+              <div className="flex gap-2.5 flex-wrap">
+                <button
+                  onClick={() => router.push('/register')}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition hover:opacity-90 active:scale-95"
+                  style={{ background: '#71BC68', color: '#0A4C3E' }}
+                >
+                  Daftar Jadi Petani <ArrowRight size={15} />
                 </button>
-                <button onClick={() => router.push('/login')}
-                  className="px-6 py-3 rounded-full font-bold text-sm transition hover:bg-white/10"
-                  style={{ border: '1.5px solid rgba(255,255,255,0.3)', color: 'white' }}>
+                <button
+                  onClick={() => router.push('/login')}
+                  className="px-5 py-2.5 rounded-full font-bold text-sm transition hover:bg-white/10"
+                  style={{ border: '1.5px solid rgba(255,255,255,0.3)', color: 'white' }}
+                >
                   Sudah Punya Akun
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 shrink-0">
+            {/* Checklist — tampil di sm+ */}
+            <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
               {[
                 'Gratis daftar & berjualan',
                 'Tentukan harga sendiri',
@@ -456,9 +517,12 @@ export default function BerandaClient({ products, categories, terlaris }: Props)
                 'Dashboard mudah dipakai',
                 'Dukungan tim KiTani',
               ].map(item => (
-                <div key={item} className="flex items-center gap-2.5 text-sm px-4 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}>
-                  <Check size={14} color="#71BC68" strokeWidth={3} />
+                <div
+                  key={item}
+                  className="flex items-center gap-2.5 text-sm px-3 py-2 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+                >
+                  <Check size={13} color="#71BC68" strokeWidth={3} />
                   {item}
                 </div>
               ))}
