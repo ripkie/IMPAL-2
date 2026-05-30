@@ -14,12 +14,5 @@ export default async function NotifikasiPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  // Mark all as read
-  await supabase
-    .from('notifications')
-    .update({ is_read: true })
-    .eq('user_id', user.id)
-    .eq('is_read', false)
-
-  return <NotifikasiClient notifications={notifs ?? []} />
+  return <NotifikasiClient notifications={notifs ?? []} userId={user.id} />
 }
