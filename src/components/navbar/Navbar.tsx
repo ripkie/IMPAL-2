@@ -166,10 +166,18 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <Link href="/login" className="px-4 py-1.5 rounded-full text-sm font-bold transition hidden md:block"
-                style={{ background: '#71BC68', color: '#0A4C3E' }}>
-                Masuk
-              </Link>
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/login"
+                  className="px-4 py-1.5 rounded-full text-sm font-semibold transition hover:bg-white/10"
+                  style={{ color: 'white', border: '1.5px solid rgba(255,255,255,0.35)' }}>
+                  Masuk
+                </Link>
+                <Link href="/register"
+                  className="px-4 py-1.5 rounded-full text-sm font-bold transition hover:opacity-90"
+                  style={{ background: '#71BC68', color: '#0A4C3E' }}>
+                  Daftar
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -284,11 +292,18 @@ export default function Navbar() {
                   </div>
                 </>
               ) : (
-                <Link href="/login" onClick={() => setProfileOpen(false)}
-                  className="flex items-center justify-center gap-2 mx-1 py-3 rounded-xl font-bold text-sm"
-                  style={{ background: '#0A4C3E', color: '#71BC68' }}>
-                  Masuk ke Akun
-                </Link>
+                <div className="flex gap-2 mx-1">
+                  <Link href="/login" onClick={() => setProfileOpen(false)}
+                    className="flex-1 flex items-center justify-center py-3 rounded-xl font-semibold text-sm"
+                    style={{ border: '1.5px solid #0A4C3E', color: '#0A4C3E' }}>
+                    Masuk
+                  </Link>
+                  <Link href="/register" onClick={() => setProfileOpen(false)}
+                    className="flex-1 flex items-center justify-center py-3 rounded-xl font-bold text-sm"
+                    style={{ background: '#0A4C3E', color: '#71BC68' }}>
+                    Daftar
+                  </Link>
+                </div>
               )}
             </div>
             {/* Padding agar tidak tertutup bottom nav (64px) + safe area */}
