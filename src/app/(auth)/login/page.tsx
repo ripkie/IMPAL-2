@@ -57,6 +57,7 @@ export default function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#FBFEFA] font-['DM_Sans'] text-[#0A4C3E]">
+      {/* Background Decorative Elements */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,#E8F7E5_0%,transparent_28%),radial-gradient(circle_at_85%_30%,#EAF7E7_0%,transparent_26%),linear-gradient(120deg,#FFFFFF_0%,#F4FAF3_50%,#FFFFFF_100%)]" />
 
       <div className="pointer-events-none absolute left-[48%] top-16 hidden text-[240px] font-black leading-none text-[#0A4C3E]/[0.035] blur-[2px] lg:block">
@@ -69,20 +70,25 @@ export default function LoginPage() {
       <span className="pointer-events-none absolute left-[50%] top-[50%] hidden h-10 w-16 rotate-[35deg] rounded-[100%_0] bg-[#71BC68]/25 blur-[3px] lg:block" />
 
       <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1440px] lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="relative hidden min-h-screen flex-col justify-between px-10 pb-8 pt-10 lg:flex xl:px-20">
+
+        {/* LEFT SECTION (DESKTOP) */}
+        <section className="relative hidden min-h-screen flex-col justify-between px-14 pb-8 pt-10 lg:flex xl:px-24">
           <div>
-            <div className="mb-9 flex h-[150px] w-[150px] items-center justify-center rounded-[34px] bg-white p-4 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
-              <Image
-                src="/images/logoKitani-2.png"
-                alt="KiTani"
-                width={120}
-                height={120}
-                priority
-                className="h-auto w-full object-contain"
-              />
+            {/* Logo Desktop: Ukuran scale dinaikkan ke 1.65 agar lebih ngepress */}
+            <div className="mb-8 flex max-w-xl items-center justify-start">
+              <div className="flex h-[140px] w-[140px] items-center justify-center overflow-hidden rounded-[32px] bg-white p-0 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+                <Image
+                  src="/images/logoKitani.png"
+                  alt="KiTani"
+                  width={140}
+                  height={140}
+                  priority
+                  className="h-full w-full scale-[1.65] object-contain"
+                />
+              </div>
             </div>
 
-            <h1 className="max-w-2xl font-['Sora'] text-[42px] font-extrabold leading-[1.18] tracking-[-1.5px] text-[#0A4C3E] xl:text-[52px]">
+            <h1 className="max-w-xl font-['Sora'] text-[48px] font-extrabold leading-[1.16] tracking-[-1.5px] text-[#0A4C3E] xl:text-[52px]">
               Belanja Sayuran Segar Langsung{' '}
               <span className="text-[#71BC68]">dari Petani</span>
             </h1>
@@ -92,6 +98,7 @@ export default function LoginPage() {
               harga transparan, dan kualitas terjamin.
             </p>
 
+            {/* Features List */}
             <div className="mt-7 grid max-w-[420px] gap-3">
               {[
                 {
@@ -128,6 +135,7 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Bottom Illustration */}
           <div className="relative mt-8">
             <div className="absolute inset-x-[-130px] bottom-[-44px] h-48 rounded-[55%_55%_0_0] bg-gradient-to-r from-[#71BC68] via-[#9BD982] to-[#71BC68]" />
 
@@ -160,17 +168,20 @@ export default function LoginPage() {
           </p>
         </section>
 
+        {/* RIGHT SECTION (LOGIN FORM) */}
         <section className="flex min-h-screen items-center justify-center px-4 py-6 sm:px-6 lg:px-10 xl:px-16">
           <div className="w-full max-w-[520px]">
+
+            {/* Logo Mobile: Ukuran scale dinaikkan ke 1.6 agar seimbang */}
             <div className="mb-6 flex justify-center lg:hidden">
-              <div className="flex h-[130px] w-[130px] items-center justify-center rounded-[30px] bg-white p-4 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <div className="flex h-[125px] w-[125px] items-center justify-center overflow-hidden rounded-[30px] bg-white p-0 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image
                   src="/images/logoKitani.png"
                   alt="KiTani"
-                  width={105}
-                  height={105}
+                  width={125}
+                  height={125}
                   priority
-                  className="h-auto w-full object-contain"
+                  className="h-full w-full scale-[1.6] object-contain"
                 />
               </div>
             </div>
