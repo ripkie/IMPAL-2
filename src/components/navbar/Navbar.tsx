@@ -27,18 +27,49 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
+    const supabase = createClient()
+    let userId: string | null = null
+
     async function loadData() {
-      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      userId = user.id
+
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
-      const { count: cart } = await supabase.from('carts').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
-      setCartCount(cart ?? 0)
+
       const { count: notif } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false)
       setNotifCount(notif ?? 0)
+
+      // Fetch cart count awal
+      const { count: cart } = await supabase.from('carts').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      setCartCount(cart ?? 0)
+
+      // Realtime subscription — update cart count setiap ada perubahan
+      const channel = supabase
+        .channel('cart-count')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'carts', filter: `user_id=eq.${user.id}` },
+          async () => {
+            const { count } = await supabase
+              .from('carts')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+            setCartCount(count ?? 0)
+          }
+        )
+        .subscribe()
+
+      return channel
     }
-    loadData()
+
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    loadData().then(ch => { if (ch) channel = ch })
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [])
 
   async function handleLogout() {
