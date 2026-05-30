@@ -1,26 +1,17 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ShoppingCart, Sprout, ArrowRight, ArrowLeft, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import {
+  ShoppingCart, Sprout, ArrowRight, ArrowLeft,
+  AlertTriangle, Eye, EyeOff, User, Mail, Phone,
+  Lock, MapPin, Store, Check,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Role = 'pembeli' | 'petani'
-
-const inputStyle = {
-  color: '#111827',
-  background: '#ffffff',
-  border: '1.5px solid #e5e7eb',
-  borderRadius: '12px',
-  padding: '12px 16px',
-  fontSize: '14px',
-  width: '100%',
-  outline: 'none',
-  transition: 'border-color 0.15s',
-  fontFamily: 'DM Sans, sans-serif',
-  boxSizing: 'border-box' as const,
-}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -66,194 +57,317 @@ export default function RegisterPage() {
     }
 
     if (role === 'petani') router.push('/petani/menunggu-verifikasi')
-    else router.push('/home')
+    else router.push('/')
     router.refresh()
   }
 
-  const labelStyle = {
-    display: 'block' as const,
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#0A4C3E',
-    marginBottom: '6px',
-  }
+  const inputCls = "h-14 w-full rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#71BC68] focus:ring-4 focus:ring-[#71BC68]/15"
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4FAF3', padding: '24px 16px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '440px' }}>
+    <main className="relative min-h-screen overflow-hidden bg-[#FBFEFA] font-['DM_Sans'] text-[#0A4C3E]">
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: '28px', fontWeight: 700, margin: 0 }}>
-            <span style={{ color: '#0A4C3E' }}>Ki</span>
-            <span style={{ color: '#71BC68' }}>Tani</span>
-          </h1>
-          <p style={{ color: '#6B7C6A', fontSize: '13px', marginTop: '6px' }}>Sayuran segar langsung dari petani</p>
-        </div>
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,#E8F7E5_0%,transparent_28%),radial-gradient(circle_at_85%_30%,#EAF7E7_0%,transparent_26%),linear-gradient(120deg,#FFFFFF_0%,#F4FAF3_50%,#FFFFFF_100%)]" />
+      <div className="pointer-events-none absolute left-[48%] top-16 hidden text-[240px] font-black leading-none text-[#0A4C3E]/[0.035] blur-[2px] lg:block">K</div>
+      <span className="pointer-events-none absolute left-[39%] top-[15%] hidden h-8 w-14 rotate-[-18deg] rounded-[100%_0] bg-[#71BC68]/45 blur-[1px] lg:block" />
+      <span className="pointer-events-none absolute right-[7%] top-[22%] hidden h-8 w-14 rotate-[-25deg] rounded-[100%_0] bg-[#71BC68]/40 blur-[1px] lg:block" />
+      <span className="pointer-events-none absolute right-[11%] bottom-[18%] hidden h-7 w-12 rotate-[-25deg] rounded-[100%_0] bg-[#71BC68]/35 blur-[1px] lg:block" />
 
-        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid rgba(113,188,104,0.2)', padding: '32px', boxShadow: '0 2px 16px rgba(10,76,62,0.06)' }}>
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1440px] lg:grid-cols-[1.08fr_0.92fr]">
 
-          {/* Step indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            {[1, 2].map(s => (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: 700,
-                  background: step >= s ? '#0A4C3E' : '#f3f4f6',
-                  color: step >= s ? '#71BC68' : '#9CA3AF',
-                  transition: 'all 0.2s',
-                }}>
-                  {s}
-                </div>
-                <span style={{ fontSize: '12px', color: step >= s ? '#0A4C3E' : '#9CA3AF', fontWeight: step >= s ? 600 : 400 }}>
-                  {s === 1 ? 'Tipe Akun' : 'Data Diri'}
-                </span>
-                {s < 2 && <div style={{ width: '24px', height: '1.5px', background: step > s ? '#0A4C3E' : '#e5e7eb', borderRadius: '99px' }} />}
+        {/* ── LEFT PANEL (desktop only) ── */}
+        <section className="relative hidden min-h-screen flex-col justify-between px-14 pb-8 pt-10 lg:flex xl:px-24">
+          <div>
+            <div className="mb-8">
+              <div className="flex h-[140px] w-[140px] items-center justify-center overflow-hidden rounded-[32px] bg-white shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+                <Image src="/images/logoKitani.png" alt="KiTani" width={140} height={140} priority
+                  className="h-full w-full scale-[1.65] object-contain" />
               </div>
-            ))}
+            </div>
+
+            <h1 className="max-w-xl font-['Sora'] text-[48px] font-extrabold leading-[1.16] tracking-[-1.5px] text-[#0A4C3E] xl:text-[52px]">
+              Bergabung dengan{' '}
+              <span className="text-[#71BC68]">KiTani</span>
+            </h1>
+
+            <p className="mt-5 max-w-lg text-[17px] leading-8 text-slate-600">
+              Daftar sebagai pembeli dan nikmati sayuran segar langsung dari petani, atau jadilah petani mitra dan jual hasil panenmu.
+            </p>
+
+            {/* Benefit cards per role */}
+            <div className="mt-8 grid max-w-[420px] gap-3">
+              <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-400">
+                {role === 'petani' ? 'Keuntungan jadi petani mitra' : 'Keuntungan belanja di KiTani'}
+              </p>
+              {(role === 'pembeli' ? [
+                { icon: <ShoppingCart size={20} />, title: 'Harga Langsung Petani', desc: 'Tanpa markup distributor, lebih hemat' },
+                { icon: <Check size={20} />, title: 'Kualitas Terjamin', desc: 'Produk segar dipanen hari yang sama' },
+                { icon: <Sprout size={20} />, title: 'Dukung Petani Lokal', desc: 'Setiap pembelian membantu petani' },
+              ] : [
+                { icon: <Store size={20} />, title: 'Jangkauan Lebih Luas', desc: 'Jual ke ribuan pembeli di seluruh Indonesia' },
+                { icon: <Check size={20} />, title: 'Gratis Bergabung', desc: 'Tidak ada biaya pendaftaran atau komisi besar' },
+                { icon: <MapPin size={20} />, title: 'Atur Harga Sendiri', desc: 'Kamu yang tentukan harga dan stok' },
+              ]).map(item => (
+                <div key={item.title}
+                  className="flex items-center gap-4 rounded-2xl border border-[#0A4C3E]/10 bg-white/90 px-5 py-4 shadow-[0_12px_32px_rgba(10,76,62,0.08)] backdrop-blur">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E8F7E5] text-[#0A4C3E]">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-extrabold text-[#0A4C3E]">{item.title}</h3>
+                    <p className="mt-0.5 text-sm text-slate-500">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: '20px', fontWeight: 700, color: '#0A4C3E', marginBottom: '4px', marginTop: 0 }}>
-            Buat Akun Baru
-          </h2>
-          <p style={{ color: '#6B7C6A', fontSize: '13px', marginBottom: '20px' }}>
-            {step === 1 ? 'Pilih tipe akun kamu' : 'Lengkapi data diri'}
-          </p>
-
-          {error && (
-            <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', fontSize: '13px', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px' }}>
-              {error}
+          {/* Bottom image */}
+          <div className="relative mt-8">
+            <div className="absolute inset-x-[-130px] bottom-[-44px] h-48 rounded-[55%_55%_0_0] bg-gradient-to-r from-[#71BC68] via-[#9BD982] to-[#71BC68]" />
+            <div className="relative z-10 mx-auto flex max-w-[680px] items-end justify-center">
+              <img
+                src="https://images.unsplash.com/photo-1495908333425-29a1e0918c5f?q=80&w=1200&auto=format&fit=crop"
+                alt="Petani KiTani"
+                className="h-[250px] w-[650px] rounded-[38px] object-cover object-center shadow-[0_24px_60px_rgba(10,76,62,0.18)] xl:h-[285px]"
+              />
             </div>
-          )}
+            <div className="relative z-20 mx-auto -mt-9 flex w-fit items-center gap-4 rounded-2xl bg-white/95 px-6 py-4 shadow-[0_18px_45px_rgba(10,76,62,0.16)]">
+              <div className="flex -space-x-3">
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#d1e7d0]" />
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#b7d9af]" />
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#89c77b]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#0A4C3E] text-xs font-extrabold text-white">200+</div>
+              </div>
+              <p className="text-[15px] leading-6 text-slate-600">
+                Lebih dari <b className="text-[#0A4C3E]">200 petani</b> aktif<br />sudah bergabung
+              </p>
+            </div>
+          </div>
 
-          {/* STEP 1 — Pilih Role */}
-          {step === 1 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {([
-                  { r: 'pembeli' as Role, icon: ShoppingCart, title: 'Pembeli', desc: 'Beli sayuran segar' },
-                  { r: 'petani' as Role, icon: Sprout, title: 'Petani', desc: 'Jual hasil panen' },
-                ] as const).map(({ r, icon: Icon, title, desc }) => (
-                  <button key={r} onClick={() => setRole(r)}
-                    style={{
-                      padding: '16px', borderRadius: '14px', border: `2px solid ${role === r ? '#71BC68' : '#e5e7eb'}`,
-                      background: role === r ? '#F4FAF3' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                    }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', background: role === r ? '#D4EDDA' : '#f5f5f5' }}>
-                      <Icon size={20} color={role === r ? '#155724' : '#9CA3AF'} />
+          <p className="relative z-20 mt-6 text-xs text-slate-500">© 2025 KiTani. All rights reserved.</p>
+        </section>
+
+        {/* ── RIGHT PANEL (form) ── */}
+        <section className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10 xl:px-16">
+          <div className="w-full max-w-[520px]">
+
+            {/* Logo mobile */}
+            <div className="mb-6 flex justify-center lg:hidden">
+              <div className="flex h-[125px] w-[125px] items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+                <Image src="/images/logoKitani.png" alt="KiTani" width={125} height={125} priority
+                  className="h-full w-full scale-[1.6] object-contain" />
+              </div>
+            </div>
+
+            <div className="rounded-[34px] border border-[#0A4C3E]/10 bg-white/92 px-6 py-8 shadow-[0_25px_90px_rgba(10,76,62,0.12)] backdrop-blur sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+
+              {/* Step indicator */}
+              <div className="mb-7 flex items-center gap-2">
+                {([1, 2] as const).map(s => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold transition-all duration-200"
+                      style={{
+                        background: step >= s ? '#0A4C3E' : '#f1f5f9',
+                        color: step >= s ? '#71BC68' : '#94a3b8',
+                      }}>
+                      {step > s ? <Check size={13} strokeWidth={3} /> : s}
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#0A4C3E' }}>{title}</div>
-                    <div style={{ fontSize: '12px', color: '#6B7C6A', marginTop: '2px' }}>{desc}</div>
-                  </button>
+                    <span className="text-xs font-extrabold transition-colors"
+                      style={{ color: step >= s ? '#0A4C3E' : '#94a3b8' }}>
+                      {s === 1 ? 'Tipe Akun' : 'Data Diri'}
+                    </span>
+                    {s < 2 && (
+                      <div className="mx-1 h-px w-6 rounded-full transition-colors duration-300"
+                        style={{ background: step > s ? '#0A4C3E' : '#e2e8f0' }} />
+                    )}
+                  </div>
                 ))}
               </div>
 
-              {role === 'petani' && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '10px 14px' }}>
-                  <AlertTriangle size={14} color="#92400E" style={{ marginTop: '1px', flexShrink: 0 }} />
-                  <p style={{ fontSize: '12px', color: '#92400E', margin: 0 }}>
-                    Akun petani perlu verifikasi admin sebelum bisa berjualan.
-                  </p>
+              {/* Heading */}
+              <div className="mb-7">
+                <p className="text-sm font-extrabold text-[#71BC68]">
+                  {step === 1 ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2'}
+                </p>
+                <h2 className="mt-2 font-['Sora'] text-3xl font-extrabold tracking-[-0.8px] text-[#0A4C3E] sm:text-[34px]">
+                  {step === 1 ? 'Pilih Tipe Akun' : 'Lengkapi Data Diri'}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  {step === 1
+                    ? 'Kamu mau belanja atau jual hasil panen?'
+                    : `Daftar sebagai ${role === 'petani' ? 'petani mitra' : 'pembeli'}`}
+                </p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                  {error}
                 </div>
               )}
 
-              <button onClick={() => setStep(2)}
-                style={{ width: '100%', padding: '13px', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer', background: '#0A4C3E', color: '#71BC68', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                Lanjut <ArrowRight size={16} />
-              </button>
-            </div>
-          )}
+              {/* ── STEP 1 ── */}
+              {step === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { r: 'pembeli' as Role, icon: ShoppingCart, title: 'Pembeli', desc: 'Beli sayuran segar dari petani lokal' },
+                      { r: 'petani' as Role, icon: Sprout, title: 'Petani', desc: 'Jual hasil panen langsung ke pembeli' },
+                    ] as const).map(({ r, icon: Icon, title, desc }) => (
+                      <button key={r} type="button" onClick={() => setRole(r)}
+                        className="rounded-2xl p-4 text-left transition-all duration-150 hover:-translate-y-0.5"
+                        style={{
+                          border: `2px solid ${role === r ? '#71BC68' : '#e2e8f0'}`,
+                          background: role === r ? '#F4FAF3' : 'white',
+                          boxShadow: role === r ? '0 8px 24px rgba(10,76,62,0.08)' : 'none',
+                        }}>
+                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl transition-colors"
+                          style={{ background: role === r ? '#D4EDDA' : '#f8fafc' }}>
+                          <Icon size={20} color={role === r ? '#155724' : '#94a3b8'} />
+                        </div>
+                        <div className="text-sm font-extrabold text-[#0A4C3E]">{title}</div>
+                        <div className="mt-1 text-xs leading-relaxed text-slate-500">{desc}</div>
+                        {role === r && (
+                          <div className="mt-2.5 flex items-center gap-1 text-xs font-extrabold text-[#71BC68]">
+                            <Check size={12} strokeWidth={3} /> Dipilih
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
 
-          {/* STEP 2 — Isi Data */}
-          {step === 2 && (
-            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {role === 'petani' && (
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <AlertTriangle size={15} color="#92400E" className="mt-0.5 shrink-0" />
+                      <p className="text-xs leading-relaxed text-amber-800">
+                        Akun petani perlu verifikasi oleh admin sebelum bisa mulai berjualan.
+                      </p>
+                    </div>
+                  )}
 
-              <div>
-                <label style={labelStyle}>Nama Lengkap</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                  required placeholder="Nama lengkap kamu" style={inputStyle}
-                  onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                  onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  required placeholder="email@contoh.com" style={inputStyle}
-                  onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                  onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>No. HP</label>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                  placeholder="08xxxxxxxxxx" style={inputStyle}
-                  onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                  onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Password</label>
-                <div style={{ position: 'relative' }}>
-                  <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                    required minLength={6} placeholder="Minimal 6 karakter"
-                    style={{ ...inputStyle, paddingRight: '44px' }}
-                    onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                    onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-                  <button type="button" onClick={() => setShowPass(p => !p)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
-                    {showPass ? <EyeOff size={16} color="#9CA3AF" /> : <Eye size={16} color="#9CA3AF" />}
+                  <button type="button" onClick={() => setStep(2)}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A4C3E] to-[#0C6A52] text-sm font-extrabold text-white shadow-[0_15px_35px_rgba(10,76,62,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(10,76,62,0.28)] active:translate-y-0">
+                    Lanjut ke Data Diri <ArrowRight size={16} />
                   </button>
                 </div>
-              </div>
-
-              {/* Extra untuk petani */}
-              {role === 'petani' && (
-                <>
-                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '14px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#6B7C6A', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 14px' }}>
-                      Data Pertanian
-                    </p>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Nama Usaha / Kebun</label>
-                    <input type="text" value={farmName} onChange={e => setFarmName(e.target.value)}
-                      required placeholder="Contoh: Kebun Pak Sunaryo" style={inputStyle}
-                      onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                      onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Lokasi Pertanian</label>
-                    <input type="text" value={farmLocation} onChange={e => setFarmLocation(e.target.value)}
-                      required placeholder="Contoh: Malang, Jawa Timur" style={inputStyle}
-                      onFocus={e => e.currentTarget.style.borderColor = '#71BC68'}
-                      onBlur={e => e.currentTarget.style.borderColor = '#e5e7eb'} />
-                  </div>
-                </>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                <button type="button" onClick={() => setStep(1)}
-                  style={{ flex: 1, padding: '13px', borderRadius: '12px', fontWeight: 700, fontSize: '14px', background: '#f3f4f6', color: '#6B7C6A', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                  <ArrowLeft size={15} /> Kembali
-                </button>
-                <button type="submit" disabled={loading}
-                  style={{ flex: 1, padding: '13px', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: loading ? '#9CA3AF' : '#0A4C3E', color: '#71BC68', fontFamily: 'DM Sans, sans-serif' }}>
-                  {loading ? 'Memproses...' : 'Daftar'}
-                </button>
-              </div>
-            </form>
-          )}
+              {/* ── STEP 2 ── */}
+              {step === 2 && (
+                <form onSubmit={handleRegister} className="flex flex-col gap-5">
 
-          <p style={{ textAlign: 'center', fontSize: '13px', color: '#6B7C6A', marginTop: '20px', marginBottom: 0 }}>
-            Sudah punya akun?{' '}
-            <Link href="/login" style={{ color: '#71BC68', fontWeight: 700, textDecoration: 'none' }}>
-              Masuk di sini
-            </Link>
-          </p>
-        </div>
+                  {/* Nama */}
+                  <div>
+                    <label className="mb-2 block text-sm font-extrabold text-slate-700">Nama Lengkap</label>
+                    <div className="relative">
+                      <User size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+                        required placeholder="Nama lengkap kamu"
+                        className={`${inputCls} pl-12 pr-5`} />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="mb-2 block text-sm font-extrabold text-slate-700">Email</label>
+                    <div className="relative">
+                      <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                        required placeholder="email@contoh.com"
+                        className={`${inputCls} pl-12 pr-5`} />
+                    </div>
+                  </div>
+
+                  {/* No. HP */}
+                  <div>
+                    <label className="mb-2 block text-sm font-extrabold text-slate-700">No. HP</label>
+                    <div className="relative">
+                      <Phone size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                        placeholder="08xxxxxxxxxx"
+                        className={`${inputCls} pl-12 pr-5`} />
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="mb-2 block text-sm font-extrabold text-slate-700">Password</label>
+                    <div className="relative">
+                      <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                        required minLength={6} placeholder="Minimal 6 karakter"
+                        className={`${inputCls} pl-12 pr-14`} />
+                      <button type="button" onClick={() => setShowPass(p => !p)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-[#0A4C3E]">
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Extra fields for petani */}
+                  {role === 'petani' && (
+                    <>
+                      <div className="flex items-center gap-3 border-t border-slate-100 pt-2">
+                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-400">Data Pertanian</span>
+                        <div className="h-px flex-1 bg-slate-100" />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-extrabold text-slate-700">Nama Usaha / Kebun</label>
+                        <div className="relative">
+                          <Store size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input type="text" value={farmName} onChange={e => setFarmName(e.target.value)}
+                            required placeholder="Contoh: Kebun Pak Sunaryo"
+                            className={`${inputCls} pl-12 pr-5`} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-extrabold text-slate-700">Lokasi Pertanian</label>
+                        <div className="relative">
+                          <MapPin size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input type="text" value={farmLocation} onChange={e => setFarmLocation(e.target.value)}
+                            required placeholder="Contoh: Malang, Jawa Timur"
+                            className={`${inputCls} pl-12 pr-5`} />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={() => setStep(1)}
+                      className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]">
+                      <ArrowLeft size={15} /> Kembali
+                    </button>
+                    <button type="submit" disabled={loading}
+                      className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A4C3E] to-[#0C6A52] text-sm font-extrabold text-white shadow-[0_15px_35px_rgba(10,76,62,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(10,76,62,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-400">
+                      {loading ? 'Memproses...' : 'Daftar Sekarang'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <p className="mt-7 text-center text-sm text-slate-500">
+                Sudah punya akun?{' '}
+                <Link href="/login" className="font-extrabold text-[#0A4C3E] transition hover:text-[#71BC68]">
+                  Masuk di sini
+                </Link>
+              </p>
+            </div>
+
+            <div className="mt-8 hidden justify-center gap-8 text-xs font-bold text-[#0A4C3E] lg:flex">
+              <span>Tentang Kami</span>
+              <span>Kebijakan Privasi</span>
+              <span>Syarat &amp; Ketentuan</span>
+              <span>Bantuan</span>
+            </div>
+          </div>
+        </section>
+
       </div>
-    </div>
+    </main>
   )
 }
