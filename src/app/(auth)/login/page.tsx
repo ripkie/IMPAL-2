@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
-import { Eye, EyeOff, Leaf, ShoppingBasket, ShieldCheck, Truck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { FormEvent, useState } from 'react'
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Truck,
+  BadgeCheck,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -14,13 +23,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
     if (error) {
       setError('Email atau password salah.')
@@ -44,142 +56,249 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4FAF3] flex items-center justify-center px-4 py-8 font-['DM_Sans']">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 bg-white rounded-[32px] overflow-hidden shadow-[0_24px_80px_rgba(10,76,62,0.14)] border border-[#71BC68]/20">
+    <main className="relative min-h-screen overflow-hidden bg-[#FBFEFA] font-['DM_Sans'] text-[#0A4C3E]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,#E8F7E5_0%,transparent_28%),radial-gradient(circle_at_85%_30%,#EAF7E7_0%,transparent_26%),linear-gradient(120deg,#FFFFFF_0%,#F4FAF3_50%,#FFFFFF_100%)]" />
 
-        {/* LEFT SIDE */}
-        <section className="hidden lg:flex relative bg-[#0A4C3E] text-white p-12 flex-col justify-between overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#71BC68]/20" />
-          <div className="absolute bottom-10 -left-16 w-56 h-56 rounded-full bg-[#71BC68]/10" />
+      <div className="pointer-events-none absolute left-[48%] top-16 hidden text-[240px] font-black leading-none text-[#0A4C3E]/[0.035] blur-[2px] lg:block">
+        K
+      </div>
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-12">
-              <div className="w-12 h-12 rounded-2xl bg-[#71BC68] flex items-center justify-center">
-                <Leaf size={26} className="text-[#0A4C3E]" />
-              </div>
-              <h1 className="font-['Sora'] text-3xl font-bold">
-                Ki<span className="text-[#71BC68]">Tani</span>
-              </h1>
+      <span className="pointer-events-none absolute left-[39%] top-[15%] hidden h-8 w-14 rotate-[-18deg] rounded-[100%_0] bg-[#71BC68]/45 blur-[1px] lg:block" />
+      <span className="pointer-events-none absolute right-[7%] top-[22%] hidden h-8 w-14 rotate-[-25deg] rounded-[100%_0] bg-[#71BC68]/40 blur-[1px] lg:block" />
+      <span className="pointer-events-none absolute right-[11%] bottom-[18%] hidden h-7 w-12 rotate-[-25deg] rounded-[100%_0] bg-[#71BC68]/35 blur-[1px] lg:block" />
+      <span className="pointer-events-none absolute left-[50%] top-[50%] hidden h-10 w-16 rotate-[35deg] rounded-[100%_0] bg-[#71BC68]/25 blur-[3px] lg:block" />
+
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1440px] lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="relative hidden min-h-screen flex-col justify-between px-10 pb-8 pt-10 lg:flex xl:px-20">
+          <div>
+            <div className="mb-9 flex h-[150px] w-[150px] items-center justify-center rounded-[34px] bg-white p-4 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <Image
+                src="/images/logoKitani-2.png"
+                alt="KiTani"
+                width={120}
+                height={120}
+                priority
+                className="h-auto w-full object-contain"
+              />
             </div>
 
-            <h2 className="font-['Sora'] text-4xl font-bold leading-tight mb-5">
-              Belanja sayuran segar langsung dari petani lokal.
-            </h2>
+            <h1 className="max-w-2xl font-['Sora'] text-[42px] font-extrabold leading-[1.18] tracking-[-1.5px] text-[#0A4C3E] xl:text-[52px]">
+              Belanja Sayuran Segar Langsung{' '}
+              <span className="text-[#71BC68]">dari Petani</span>
+            </h1>
 
-            <p className="text-white/75 text-base leading-relaxed max-w-md">
-              Dapatkan produk pertanian terbaik, harga transparan, dan pengiriman cepat dari petani terpercaya.
+            <p className="mt-5 max-w-lg text-[17px] leading-8 text-slate-600">
+              KiTani menghubungkan pembeli dengan petani lokal. Produk segar,
+              harga transparan, dan kualitas terjamin.
             </p>
+
+            <div className="mt-7 grid max-w-[420px] gap-3">
+              {[
+                {
+                  icon: <ShieldCheck size={24} />,
+                  title: 'Produk Segar Setiap Hari',
+                  desc: 'Dipetik langsung dari kebun petani',
+                },
+                {
+                  icon: <Truck size={24} />,
+                  title: 'Pengiriman Cepat & Aman',
+                  desc: 'Pesanan sampai dengan kondisi segar',
+                },
+                {
+                  icon: <BadgeCheck size={24} />,
+                  title: 'Petani Terverifikasi',
+                  desc: 'Belanja lebih aman dan terpercaya',
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-center gap-4 rounded-2xl border border-[#0A4C3E]/10 bg-white/90 px-5 py-4 shadow-[0_12px_32px_rgba(10,76,62,0.08)] backdrop-blur"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E8F7E5] text-[#0A4C3E]">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-extrabold text-[#0A4C3E]">
+                      {item.title}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-slate-500">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="relative z-10 grid grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white/10 backdrop-blur p-4 border border-white/10">
-              <ShoppingBasket size={22} className="text-[#71BC68] mb-3" />
-              <p className="text-sm font-semibold">Produk Segar</p>
-            </div>
-            <div className="rounded-2xl bg-white/10 backdrop-blur p-4 border border-white/10">
-              <Truck size={22} className="text-[#71BC68] mb-3" />
-              <p className="text-sm font-semibold">Cepat Sampai</p>
-            </div>
-            <div className="rounded-2xl bg-white/10 backdrop-blur p-4 border border-white/10">
-              <ShieldCheck size={22} className="text-[#71BC68] mb-3" />
-              <p className="text-sm font-semibold">Aman</p>
-            </div>
-          </div>
-        </section>
+          <div className="relative mt-8">
+            <div className="absolute inset-x-[-130px] bottom-[-44px] h-48 rounded-[55%_55%_0_0] bg-gradient-to-r from-[#71BC68] via-[#9BD982] to-[#71BC68]" />
 
-        {/* RIGHT SIDE */}
-        <section className="p-6 sm:p-10 lg:p-14 flex items-center">
-          <div className="w-full max-w-md mx-auto">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-              <div className="w-11 h-11 rounded-2xl bg-[#0A4C3E] flex items-center justify-center">
-                <Leaf size={23} className="text-[#71BC68]" />
+            <div className="relative z-10 mx-auto flex max-w-[680px] items-end justify-center">
+              <img
+                src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop"
+                alt="Sayuran segar KiTani"
+                className="h-[250px] w-[650px] rounded-[38px] object-cover object-center shadow-[0_24px_60px_rgba(10,76,62,0.18)] xl:h-[285px]"
+              />
+            </div>
+
+            <div className="relative z-20 mx-auto -mt-9 flex w-fit items-center gap-4 rounded-2xl bg-white/95 px-6 py-4 shadow-[0_18px_45px_rgba(10,76,62,0.16)]">
+              <div className="flex -space-x-3">
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#d1e7d0]" />
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#b7d9af]" />
+                <div className="h-10 w-10 rounded-full border-2 border-white bg-[#89c77b]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#0A4C3E] text-xs font-extrabold text-white">
+                  1K+
+                </div>
               </div>
-              <h1 className="font-['Sora'] text-2xl font-bold text-[#0A4C3E]">
-                Ki<span className="text-[#71BC68]">Tani</span>
-              </h1>
-            </div>
-
-            <div className="mb-8">
-              <p className="text-sm font-semibold text-[#71BC68] mb-2">Selamat datang kembali</p>
-              <h2 className="font-['Sora'] text-3xl font-bold text-[#0A4C3E]">
-                Masuk ke Akun
-              </h2>
-              <p className="text-sm text-gray-500 mt-2">
-                Masuk untuk mulai belanja sayuran segar favoritmu.
+              <p className="text-[15px] leading-6 text-slate-600">
+                Lebih dari 1.000+ pelanggan <br />
+                percaya <b className="text-[#0A4C3E]">KiTani</b>
               </p>
             </div>
+          </div>
 
-            {error && (
-              <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+          <p className="relative z-20 mt-6 text-xs text-slate-500">
+            © 2025 KiTani. All rights reserved.
+          </p>
+        </section>
 
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-[#0A4C3E] mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="email@contoh.com"
-                  className="w-full rounded-2xl border border-gray-200 bg-[#F9FCF8] px-4 py-3.5 text-sm text-gray-900 outline-none transition focus:border-[#71BC68] focus:bg-white focus:ring-4 focus:ring-[#71BC68]/15"
+        <section className="flex min-h-screen items-center justify-center px-4 py-6 sm:px-6 lg:px-10 xl:px-16">
+          <div className="w-full max-w-[520px]">
+            <div className="mb-6 flex justify-center lg:hidden">
+              <div className="flex h-[130px] w-[130px] items-center justify-center rounded-[30px] bg-white p-4 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+                <Image
+                  src="/images/logoKitani.png"
+                  alt="KiTani"
+                  width={105}
+                  height={105}
+                  priority
+                  className="h-auto w-full object-contain"
                 />
               </div>
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-[#0A4C3E]">
-                    Password
-                  </label>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Masukkan password"
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F9FCF8] px-4 py-3.5 pr-12 text-sm text-gray-900 outline-none transition focus:border-[#71BC68] focus:bg-white focus:ring-4 focus:ring-[#71BC68]/15"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((prev) => !prev)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0A4C3E]"
-                  >
-                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+            <div className="rounded-[34px] border border-[#0A4C3E]/10 bg-white/92 px-6 py-8 shadow-[0_25px_90px_rgba(10,76,62,0.12)] backdrop-blur sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+              <div className="mb-8">
+                <p className="text-sm font-extrabold text-[#71BC68]">
+                  Selamat datang kembali
+                </p>
+                <h2 className="mt-2 font-['Sora'] text-3xl font-extrabold tracking-[-0.8px] text-[#0A4C3E] sm:text-[34px]">
+                  Masuk ke Akun KiTani
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-slate-500">
+                  Yuk, lanjut belanja sayuran segar favoritmu.
+                </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-2xl bg-[#0A4C3E] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0A4C3E]/20 transition hover:bg-[#083d32] disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                {loading ? 'Memproses...' : 'Masuk Sekarang'}
-              </button>
-            </form>
+              {error && (
+                <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                  {error}
+                </div>
+              )}
 
-            <div className="mt-7 text-center">
-              <p className="text-sm text-gray-500">
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-extrabold text-slate-700">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      size={20}
+                      className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Masukkan email kamu"
+                      className="h-16 w-full rounded-2xl border border-slate-200 bg-white pl-14 pr-5 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#71BC68] focus:ring-4 focus:ring-[#71BC68]/15"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-extrabold text-slate-700">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock
+                      size={20}
+                      className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Masukkan password"
+                      className="h-16 w-full rounded-2xl border border-slate-200 bg-white pl-14 pr-14 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#71BC68] focus:ring-4 focus:ring-[#71BC68]/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass((p) => !p)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-[#0A4C3E]"
+                    >
+                      {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="text-sm font-extrabold text-[#0A4C3E] transition hover:text-[#71BC68]"
+                  >
+                    Lupa password?
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="h-16 w-full rounded-2xl bg-gradient-to-r from-[#0A4C3E] to-[#0C6A52] text-sm font-extrabold text-white shadow-[0_15px_35px_rgba(10,76,62,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(10,76,62,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-400"
+                >
+                  {loading ? 'Memproses...' : 'Masuk'}
+                </button>
+              </form>
+
+              <p className="mt-7 text-center text-sm text-slate-500">
                 Belum punya akun?{' '}
-                <Link href="/register" className="font-bold text-[#0A4C3E] hover:text-[#71BC68]">
+                <Link
+                  href="/register"
+                  className="font-extrabold text-[#0A4C3E] transition hover:text-[#71BC68]"
+                >
                   Daftar sekarang
                 </Link>
               </p>
 
-              <Link
-                href="/beranda"
-                className="mt-4 inline-block text-xs font-semibold text-gray-400 hover:text-[#0A4C3E]"
-              >
-                Kembali ke beranda
-              </Link>
+              <div className="mt-7 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#F4FAF3] to-[#EEF8EC] px-5 py-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#0A4C3E]">
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <p className="text-sm font-extrabold text-[#0A4C3E]">
+                    Keamanan terjamin
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Data kamu aman bersama KiTani
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-7 text-center">
+                <Link
+                  href="/beranda"
+                  className="text-xs font-extrabold text-slate-400 transition hover:text-[#0A4C3E]"
+                >
+                  Kembali ke beranda
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-8 hidden justify-center gap-8 text-xs font-bold text-[#0A4C3E] lg:flex">
+              <span>Tentang Kami</span>
+              <span>Kebijakan Privasi</span>
+              <span>Syarat & Ketentuan</span>
+              <span>Bantuan</span>
             </div>
           </div>
         </section>
