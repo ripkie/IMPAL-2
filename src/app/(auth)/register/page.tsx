@@ -66,7 +66,7 @@ export default function RegisterPage() {
     }
 
     if (role === 'petani') router.push('/petani/menunggu-verifikasi')
-    else router.push('/')
+    else router.push('/home')
     router.refresh()
   }
 
