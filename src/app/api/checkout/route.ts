@@ -155,6 +155,11 @@ export async function POST(req: NextRequest) {
             address: shippingAddress,
           },
         },
+        callbacks: {
+          finish: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/transaksi`,
+          error: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/transaksi`,
+          pending: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/transaksi`,
+        },
         item_details: [
           ...cartItems.map(item => {
             const p = item.products as any

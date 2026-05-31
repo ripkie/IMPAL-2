@@ -62,6 +62,7 @@ export async function middleware(request: NextRequest) {
       path.startsWith('/transaksi') ||
       path === '/home' ||
       path === '/profil' ||
+      path === '/notifikasi' ||
       path.startsWith('/produk')
     )
       return NextResponse.redirect(new URL('/login', request.url))
@@ -83,8 +84,8 @@ export async function middleware(request: NextRequest) {
   // Petani hanya boleh akses /petani/* — tidak boleh ke halaman pembeli
   if (role === 'petani') {
     if (path === '/home' || path === '/profil' ||
-        path.startsWith('/keranjang') || path.startsWith('/transaksi') ||
-        path.startsWith('/produk')) {
+      path.startsWith('/keranjang') || path.startsWith('/transaksi') ||
+      path.startsWith('/produk')) {
       return NextResponse.redirect(new URL('/petani/dashboard', request.url))
     }
     if (path.startsWith('/petani') && !profile?.is_verified)
@@ -114,5 +115,6 @@ export const config = {
     '/produk/:path*',
     '/home',
     '/profil',
+    '/notifikasi',
   ],
 }
