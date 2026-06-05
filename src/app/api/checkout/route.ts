@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import MidtransClient from 'midtrans-client'
 
 const snap = new MidtransClient.Snap({
@@ -28,6 +29,17 @@ export async function POST(req: NextRequest) {
       shippingCost,
       notes,
     } = body
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json({ error: 'Konfigurasi Supabase server belum lengkap' }, { status: 500 })
+    }
+
+    // Service role hanya dipakai di server untuk update stok produk,
+    // karena pembeli biasanya tidak punya izin update tabel products lewat RLS.
+    const serviceSupabase = createServiceClient(supabaseUrl, serviceRoleKey)
 
     // Validasi input dasar
     if (!cartItemIds?.length || !shippingName || !shippingAddress) {
@@ -193,14 +205,25 @@ export async function POST(req: NextRequest) {
       .update({ midtrans_token: snapToken })
       .eq('id', order.id)
 
-    // Kurangi stok produk
+    // Kurangi stok produk.
+    // Pakai service role supaya update benar-benar masuk ke DB dan tidak mental karena RLS buyer.
     for (const item of cartItems) {
       const product = item.products as any
-      await supabase
+      const nextStock = Math.max(0, Number(product.stock) - Number(item.quantity))
+
+      const { error: stockError } = await serviceSupabase
         .from('products')
-        .update({ stock: product.stock - item.quantity })
+        .update({
+          stock: nextStock,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', product.id)
         .eq('farmer_id', product.farmer_id) // extra safety check
+
+      if (stockError) {
+        console.error('[checkout] Gagal update stok produk:', stockError.message)
+        return NextResponse.json({ error: `Gagal mengurangi stok ${product.name}` }, { status: 500 })
+      }
     }
 
     // Hapus dari keranjang

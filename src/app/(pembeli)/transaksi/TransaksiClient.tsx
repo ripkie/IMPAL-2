@@ -8,7 +8,6 @@ import {
   Copy, Check, AlertCircle, Star, CreditCard,
   Loader, ArrowRight, ReceiptText
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 interface OrderItem {
   id: string; product_name: string; price: number
@@ -126,13 +125,25 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Gagal memuat pembayaran')
         ; (window as any).snap.pay(data.snapToken, {
-          onSuccess: () => {
-            showToast('Pembayaran berhasil! 🎉')
-            setOrders(prev => prev.map(o =>
-              o.id === orderId
-                ? { ...o, status: 'paid', payment_status: 'paid', paid_at: new Date().toISOString() }
-                : o
-            ))
+          onSuccess: async () => {
+            try {
+              const syncRes = await fetch('/api/payment/sync-paid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId }),
+              })
+              const syncData = await syncRes.json()
+              if (!syncRes.ok) throw new Error(syncData.error ?? 'Gagal sinkron pembayaran')
+
+              showToast('Pembayaran berhasil! 🎉')
+              setOrders(prev => prev.map(o =>
+                o.id === orderId
+                  ? { ...o, status: 'paid', payment_status: 'paid', paid_at: syncData.order?.paid_at ?? new Date().toISOString() }
+                  : o
+              ))
+            } catch (error: any) {
+              showToast(error.message ?? 'Pembayaran berhasil, tapi status belum tersinkron', 'error')
+            }
           },
           onPending: () => showToast('Pembayaran sedang diverifikasi...'),
           onError: () => showToast('Pembayaran gagal, silakan coba lagi', 'error'),
@@ -147,19 +158,30 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
 
   async function handleKonfirmasiDiterima(orderId: string) {
     setLoadingConfirm(orderId)
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('orders').update({ status: 'done', done_at: new Date().toISOString() }).eq('id', orderId)
-    if (error) {
-      showToast('Gagal mengkonfirmasi pesanan', 'error')
-    } else {
+    try {
+      const res = await fetch('/api/orders/confirm-received', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Gagal mengkonfirmasi pesanan')
+      }
+
       setOrders(prev => prev.map(o =>
-        o.id === orderId ? { ...o, status: 'done', done_at: new Date().toISOString() } : o
+        o.id === orderId
+          ? { ...o, status: 'done', done_at: data.order?.done_at ?? new Date().toISOString() }
+          : o
       ))
-      showToast('Pesanan dikonfirmasi! Terima kasih 🎉')
+      showToast('Pesanan dikonfirmasi! Produk terjual sudah diperbarui 🎉')
+    } catch (error: any) {
+      showToast(error.message ?? 'Gagal mengkonfirmasi pesanan', 'error')
+    } finally {
+      setConfirming(null)
+      setLoadingConfirm(null)
     }
-    setConfirming(null)
-    setLoadingConfirm(null)
   }
 
   const filtered = orders.filter(o => filter === 'all' || o.status === filter)

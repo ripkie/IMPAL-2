@@ -2,246 +2,386 @@
 
 import { useRouter } from 'next/navigation'
 import {
-  Package, TrendingUp, AlertTriangle,
-  ArrowRight, Plus, ShoppingBag, ClipboardList,
-  Bell, Inbox, CheckCircle, Clock
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  Inbox,
+  Package,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+  TrendingUp,
+  Truck,
+  Wallet,
 } from 'lucide-react'
-import type { Profile, Notification } from '@/types'
+import type { Notification, Profile } from '@/types'
 
-interface Order {
+interface OrderProduct {
   id: string
+  product_id?: string | null
   product_name: string
   quantity: number
   subtotal: number
+}
+
+interface OrderSummary {
+  id: string
+  order_number: string
+  status: string
+  payment_status?: string | null
   created_at: string
-  orders: { id: string; order_number: string; status: string; buyer_id: string } | null
+  tracking_number?: string | null
+  total: number
+  total_items: number
+  items: OrderProduct[]
 }
 
 interface StokItem {
-  id: string; name: string; stock: number; unit: string
+  id: string
+  name: string
+  stock: number
+  unit: string
+}
+
+interface ProdukTerlarisItem {
+  name: string
+  sold: number
+  revenue: number
 }
 
 interface Props {
   profile: Profile
   totalProduk: number
   totalPendapatan: number
-  pesananMasuk: Order[]
+  revenuePaidOrDone: number
+  totalProdukTerjual: number
+  totalPesanan: number
+  pesananTerbaru: OrderSummary[]
   notifikasi: Notification[]
   stokMenipis: StokItem[]
+  produkTerlaris: ProdukTerlarisItem[]
   pesananPerluAksi: number
+  pesananPerluProses: number
+  pesananDiproses: number
+  pesananDikirim: number
+  pesananSelesai: number
+  pesananDibatalkan: number
+  pesananBelumBayar: number
 }
 
-const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  pending:    { label: 'Menunggu Bayar',  color: '#856404', bg: '#FFF3CD' },
-  paid:       { label: 'Perlu Diproses',  color: '#004085', bg: '#CCE5FF' },
-  processing: { label: 'Sedang Diproses', color: '#0A4C3E', bg: '#D0ECD6' },
-  shipped:    { label: 'Dikirim',         color: '#155724', bg: '#D4EDDA' },
-  done:       { label: 'Selesai',         color: '#155724', bg: '#D4EDDA' },
+const statusLabel: Record<string, { label: string; bg: string; color: string }> = {
+  pending: { label: 'Belum Bayar', bg: '#FFF5D6', color: '#8A5B00' },
+  paid: { label: 'Perlu Diproses', bg: '#E7F0FF', color: '#0B4A8B' },
+  processing: { label: 'Diproses', bg: '#E7F8EE', color: '#0A4C3E' },
+  shipped: { label: 'Dikirim', bg: '#E7F8EE', color: '#166534' },
+  done: { label: 'Selesai', bg: '#E7F8EE', color: '#166534' },
+  cancelled: { label: 'Dibatalkan', bg: '#FFE8E8', color: '#B42318' },
+}
+
+function formatRp(value: number) {
+  return `Rp ${Number(value ?? 0).toLocaleString('id-ID')}`
+}
+
+function formatDate(value?: string) {
+  if (!value) return '-'
+  return new Date(value).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export default function PetaniHomeClient({
-  profile, totalProduk, totalPendapatan,
-  pesananMasuk, notifikasi, stokMenipis, pesananPerluAksi
+  profile,
+  totalProduk,
+  totalPendapatan,
+  revenuePaidOrDone,
+  totalProdukTerjual,
+  totalPesanan,
+  pesananTerbaru,
+  notifikasi,
+  stokMenipis,
+  produkTerlaris,
+  pesananPerluAksi,
+  pesananPerluProses,
+  pesananDiproses,
+  pesananDikirim,
+  pesananSelesai,
+  pesananDibatalkan,
+  pesananBelumBayar,
 }: Props) {
   const router = useRouter()
-  const jam = new Date().getHours()
-  const salam = jam < 11 ? 'Selamat Pagi' : jam < 15 ? 'Selamat Siang' : jam < 18 ? 'Selamat Sore' : 'Selamat Malam'
+  const hour = new Date().getHours()
+  const salam = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Petani'
 
+  const activeRevenue = revenuePaidOrDone || totalPendapatan
+  const avgOrder = totalPesanan > 0 ? Math.round(activeRevenue / totalPesanan) : 0
+
+  const overviewCards = [
+    {
+      title: 'Omzet Terkonfirmasi',
+      value: formatRp(activeRevenue),
+      note: 'Dari order sudah bayar sampai selesai',
+      icon: Wallet,
+    },
+    {
+      title: 'Pendapatan Selesai',
+      value: formatRp(totalPendapatan),
+      note: 'Order yang sudah diterima pembeli',
+      icon: TrendingUp,
+    },
+    {
+      title: 'Produk Terjual',
+      value: `${totalProdukTerjual}`,
+      note: 'Total item dari transaksi selesai',
+      icon: ShoppingBag,
+    },
+    {
+      title: 'Rata-rata Order',
+      value: formatRp(avgOrder),
+      note: 'Estimasi nilai per transaksi',
+      icon: ClipboardList,
+    },
+  ]
+
+  const statusCards = [
+    { title: 'Belum Bayar', value: pesananBelumBayar, icon: Clock3, hint: 'Menunggu pembayaran' },
+    { title: 'Perlu Diproses', value: pesananPerluProses, icon: Package, hint: 'Segera siapkan pesanan' },
+    { title: 'Diproses', value: pesananDiproses, icon: ClipboardList, hint: 'Sedang dikemas' },
+    { title: 'Dikirim', value: pesananDikirim, icon: Truck, hint: 'Dalam perjalanan' },
+    { title: 'Selesai', value: pesananSelesai, icon: CheckCircle2, hint: 'Diterima pembeli' },
+    { title: 'Dibatalkan', value: pesananDibatalkan, icon: AlertTriangle, hint: 'Order batal' },
+  ]
+
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
+    <main className="min-h-screen bg-[#F4FAF3] px-4 pb-28 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mx-auto max-w-6xl">
+        <section className="relative overflow-hidden rounded-[32px] bg-[#0A4C3E] p-5 shadow-[0_24px_70px_rgba(10,76,62,0.22)] md:p-8">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#71BC68]/15" />
+          <div className="absolute bottom-0 right-12 h-24 w-24 rounded-full bg-white/5" />
 
-      {/* Header */}
-      <section style={{ background: '#0A4C3E', position: 'relative', overflow: 'hidden' }}
-        className="px-5 pt-4 pb-6">
-        <div className="absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'rgba(113,188,104,0.1)', top: -70, right: -40 }} />
-        <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{salam},</p>
-              <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
-                {firstName}
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#B9E8B4] ring-1 ring-white/10">
+                <Sparkles size={14} /> Seller Performance Center
+              </div>
+              <p className="text-sm font-medium text-white/65">{salam}, {firstName}</p>
+              <h1 className="mt-1 max-w-2xl text-2xl font-extrabold leading-tight text-white md:text-4xl" style={{ fontFamily: 'Sora, sans-serif' }}>
+                Pantau penjualan toko tani kamu dalam satu layar.
               </h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 md:text-base">
+                Lihat omzet, pesanan yang perlu diproses, stok menipis, dan produk terlaris tanpa pindah-pindah halaman.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button onClick={() => router.push('/petani/pesanan')} className="inline-flex items-center gap-2 rounded-2xl bg-[#71BC68] px-5 py-3 text-sm font-extrabold text-[#0A4C3E] transition hover:-translate-y-0.5">
+                  Kelola Pesanan <ArrowRight size={17} />
+                </button>
+                <button onClick={() => router.push('/petani/produk')} className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-5 py-3 text-sm font-extrabold text-white ring-1 ring-white/15 transition hover:-translate-y-0.5">
+                  <Plus size={17} /> Tambah Produk
+                </button>
+              </div>
             </div>
-            <button onClick={() => router.push('/petani/notifikasi')}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.1)' }}>
-              <Bell size={18} color="white" />
-              {notifikasi.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-                  style={{ background: '#71BC68', fontSize: '9px', fontWeight: 700, color: '#0A4C3E', border: '2px solid #0A4C3E' }}>
-                  {notifikasi.length > 9 ? '9+' : notifikasi.length}
-                </span>
-              )}
-            </button>
+
+            <div className="rounded-[28px] bg-white/10 p-4 ring-1 ring-white/15">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-white">Ringkasan Penjualan</p>
+                <button onClick={() => router.push('/petani/notifikasi')} className="relative rounded-2xl bg-white/10 p-2 text-white">
+                  <Bell size={18} />
+                  {notifikasi.length > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-[#71BC68] px-1.5 py-0.5 text-[10px] font-black text-[#0A4C3E]">{notifikasi.length > 9 ? '9+' : notifikasi.length}</span>}
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-3xl bg-white p-4">
+                  <p className="text-xs font-bold text-[#6B7C6A]">Total Pesanan</p>
+                  <p className="mt-2 text-2xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{totalPesanan}</p>
+                </div>
+                <div className="rounded-3xl bg-white p-4">
+                  <p className="text-xs font-bold text-[#6B7C6A]">Perlu Aksi</p>
+                  <p className="mt-2 text-2xl font-black text-[#0B4A8B]" style={{ fontFamily: 'Sora, sans-serif' }}>{pesananPerluAksi}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-3xl bg-white p-4">
+                <p className="text-xs font-bold text-[#6B7C6A]">Omzet Terkonfirmasi</p>
+                <p className="mt-2 text-2xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{formatRp(activeRevenue)}</p>
+                <p className="mt-1 text-xs font-semibold text-[#8AA08A]">Termasuk order dibayar, diproses, dikirim, dan selesai</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {overviewCards.map(item => (
+            <div key={item.title} className="rounded-[28px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-[#6B7C6A]">{item.title}</p>
+                  <p className="mt-2 text-2xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{item.value}</p>
+                  <p className="mt-1 text-xs font-medium text-[#8AA08A]">{item.note}</p>
+                </div>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F0F8EE] text-[#0A4C3E]">
+                  <item.icon size={22} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="mt-5 rounded-[30px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Monitoring Status Pesanan</h2>
+              <p className="text-sm text-[#6B7C6A]">Supaya jelas mana yang harus diproses, dikirim, atau sudah selesai.</p>
+            </div>
+            <button onClick={() => router.push('/petani/pesanan')} className="inline-flex items-center gap-1 rounded-2xl bg-[#F0F8EE] px-4 py-2 text-sm font-bold text-[#0A4C3E]">Buka pesanan <ArrowRight size={15} /></button>
           </div>
 
-          {/* Banner pesanan perlu aksi */}
-          {pesananPerluAksi > 0 && (
-            <button
-              onClick={() => router.push('/petani/pesanan')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition hover:opacity-90"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(113,188,104,0.3)' }}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: '#71BC68' }}>
-                <Clock size={15} color="#0A4C3E" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-white">
-                  {pesananPerluAksi} pesanan butuh tindakan
-                </p>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                  Tap untuk proses sekarang
-                </p>
-              </div>
-              <ArrowRight size={16} color="rgba(255,255,255,0.6)" />
-            </button>
-          )}
-        </div>
-      </section>
-
-      <div className="max-w-5xl mx-auto px-5 pb-24">
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mt-4 mb-4">
-          <div className="bg-white rounded-2xl p-4"
-            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#D4EDDA' }}>
-                <Package size={16} color="#155724" />
-              </div>
-              <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>Produk Aktif</span>
-            </div>
-            <p className="text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              {totalProduk}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4"
-            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#CCE5FF' }}>
-                <TrendingUp size={16} color="#004085" />
-              </div>
-              <span className="text-xs font-medium" style={{ color: '#6B7C6A' }}>Pendapatan</span>
-            </div>
-            <p className="text-base font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              Rp {totalPendapatan.toLocaleString('id-ID')}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>Pesanan selesai</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-5">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-            Aksi Cepat
-          </h2>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { icon: Plus,          label: 'Tambah Produk',  href: '/petani/produk',  dark: true },
-              { icon: ShoppingBag,   label: 'Produk Saya',    href: '/petani/produk',  dark: false },
-              { icon: ClipboardList, label: 'Pesanan',        href: '/petani/pesanan', dark: false, badge: pesananPerluAksi },
-            ].map(item => (
-              <button key={item.label} onClick={() => router.push(item.href)}
-                className="relative flex flex-col items-center gap-2 p-4 rounded-2xl transition hover:-translate-y-0.5"
-                style={{
-                  background: item.dark ? '#0A4C3E' : 'white',
-                  border: '1px solid rgba(113,188,104,0.15)',
-                }}>
-                <item.icon size={20} color={item.dark ? '#71BC68' : '#0A4C3E'} />
-                <span className="text-xs font-semibold text-center leading-tight"
-                  style={{ color: item.dark ? '#71BC68' : '#0A4C3E' }}>
-                  {item.label}
-                </span>
-                {item.badge && item.badge > 0 ? (
-                  <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-white"
-                    style={{ background: '#dc3545', fontSize: '10px', fontWeight: 700 }}>
-                    {item.badge}
-                  </span>
-                ) : null}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {statusCards.map(item => (
+              <button key={item.title} onClick={() => router.push('/petani/pesanan')} className="rounded-[22px] bg-[#F8FBF7] p-4 text-left transition hover:-translate-y-0.5 hover:bg-[#F0F8EE]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#0A4C3E]">
+                  <item.icon size={18} />
+                </div>
+                <p className="text-2xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{item.value}</p>
+                <p className="mt-1 text-sm font-extrabold text-[#0A4C3E]">{item.title}</p>
+                <p className="mt-0.5 text-xs text-[#8AA08A]">{item.hint}</p>
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Stok Menipis */}
-        {stokMenipis.length > 0 && (
-          <div className="mb-5 p-4 rounded-2xl" style={{ background: '#FFF3CD', border: '1px solid #FFEAA7' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle size={15} color="#856404" />
-              <h3 className="font-bold text-sm" style={{ color: '#856404' }}>Stok Hampir Habis</h3>
+        {pesananPerluAksi > 0 && (
+          <button onClick={() => router.push('/petani/pesanan')} className="mt-5 flex w-full items-center gap-4 rounded-[28px] border border-[#0B4A8B]/10 bg-[#E7F0FF] p-4 text-left transition hover:-translate-y-0.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0B4A8B] text-white"><Package size={21} /></div>
+            <div className="flex-1">
+              <p className="font-extrabold text-[#0B4A8B]">{pesananPerluAksi} pesanan butuh tindakan</p>
+              <p className="mt-1 text-sm text-[#49645B]">Prioritaskan order paid/diproses supaya pembeli cepat menerima pesanan.</p>
             </div>
-            <div className="space-y-2">
-              {stokMenipis.map(item => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <span className="text-sm font-medium" style={{ color: '#0A4C3E' }}>{item.name}</span>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full"
-                    style={{ background: 'rgba(133,100,4,0.15)', color: '#856404' }}>
-                    Sisa {item.stock} {item.unit}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => router.push('/petani/produk')}
-              className="mt-2 text-xs font-semibold flex items-center gap-1" style={{ color: '#856404' }}>
-              Update stok <ArrowRight size={12} />
-            </button>
-          </div>
+            <ArrowRight size={18} color="#0B4A8B" />
+          </button>
         )}
 
-        {/* Pesanan Terbaru */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-sm" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              Pesanan Terbaru
-            </h2>
-            <button onClick={() => router.push('/petani/pesanan')}
-              className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-              Lihat semua <ArrowRight size={12} />
-            </button>
+        <section className="mt-6 grid gap-5 lg:grid-cols-[1.35fr_0.85fr]">
+          <div className="rounded-[30px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Pesanan Terbaru</h2>
+                <p className="text-sm text-[#6B7C6A]">Order terbaru, nominal, item, dan statusnya.</p>
+              </div>
+              <button onClick={() => router.push('/petani/pesanan')} className="hidden items-center gap-1 rounded-2xl bg-[#F0F8EE] px-4 py-2 text-sm font-bold text-[#0A4C3E] md:flex">Lihat semua <ArrowRight size={15} /></button>
+            </div>
+
+            {pesananTerbaru.length === 0 ? (
+              <div className="rounded-[24px] bg-[#F8FBF7] py-14 text-center">
+                <Inbox className="mx-auto mb-3" size={34} color="#9CA3AF" />
+                <p className="font-extrabold text-[#0A4C3E]">Belum ada pesanan</p>
+                <p className="mt-1 text-sm text-[#6B7C6A]">Pesanan baru akan muncul di sini.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pesananTerbaru.map(order => {
+                  const cfg = statusLabel[order.status] ?? statusLabel.pending
+                  const itemNames = order.items.map(item => `${item.quantity}× ${item.product_name}`).join(', ')
+
+                  return (
+                    <button key={order.id} onClick={() => router.push('/petani/pesanan')} className="grid w-full gap-3 rounded-[24px] border border-[#71BC68]/15 bg-[#F8FBF7] p-4 text-left transition hover:bg-white hover:shadow-md md:grid-cols-[1fr_auto] md:items-center">
+                      <div className="flex min-w-0 gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#0A4C3E]"><ShoppingBag size={21} /></div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-extrabold text-[#0A4C3E]">{order.order_number}</p>
+                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                          </div>
+                          <p className="mt-1 truncate text-sm font-semibold text-[#6B7C6A]">{itemNames || `${order.total_items} item`}</p>
+                          <p className="mt-1 text-xs text-[#8AA08A]">{formatDate(order.created_at)}</p>
+                        </div>
+                      </div>
+                      <div className="text-left md:text-right">
+                        <p className="text-xs font-bold text-[#8AA08A]">Total</p>
+                        <p className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{formatRp(order.total)}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
-          {pesananMasuk.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-2xl"
-              style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-              <Inbox size={28} color="#9CA3AF" className="mx-auto mb-2" />
-              <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Belum ada pesanan</p>
-              <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>Pesanan baru akan muncul di sini</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {pesananMasuk.slice(0, 5).map(item => {
-                const statusCfg = STATUS_LABEL[item.orders?.status ?? 'pending']
-                const needsAction = item.orders?.status === 'paid' || item.orders?.status === 'processing'
-                return (
-                  <div key={item.id}
-                    onClick={() => router.push('/petani/pesanan')}
-                    className="flex items-center gap-3 p-4 bg-white rounded-2xl cursor-pointer transition hover:shadow-sm"
-                    style={{ border: `1px solid ${needsAction ? 'rgba(0,64,133,0.2)' : 'rgba(113,188,104,0.15)'}` }}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: statusCfg?.bg ?? '#f0f0f0' }}>
-                      <ShoppingBag size={16} color={statusCfg?.color ?? '#666'} />
+          <aside className="space-y-5">
+            <div className="rounded-[30px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Produk Terlaris</h2>
+              <p className="mt-1 text-sm text-[#6B7C6A]">Produk yang paling banyak terjual dari order selesai.</p>
+
+              {produkTerlaris.length === 0 ? (
+                <div className="mt-4 rounded-[22px] bg-[#F8FBF7] p-4 text-sm font-bold text-[#6B7C6A]">Belum ada produk terjual.</div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {produkTerlaris.map((item, index) => (
+                    <div key={`${item.name}-${index}`} className="rounded-[22px] bg-[#F8FBF7] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-extrabold text-[#0A4C3E]">{index + 1}. {item.name}</p>
+                          <p className="mt-1 text-xs font-semibold text-[#8AA08A]">{item.sold} terjual</p>
+                        </div>
+                        <p className="shrink-0 text-sm font-black text-[#0A4C3E]">{formatRp(item.revenue)}</p>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                        <div className="h-full rounded-full bg-[#71BC68]" style={{ width: `${Math.max(10, Math.min(100, item.sold * 8))}%` }} />
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#0A4C3E' }}>
-                        {item.product_name}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>
-                        {item.quantity}× · Rp {item.subtotal.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
-                      style={{ background: statusCfg?.bg ?? '#f0f0f0', color: statusCfg?.color ?? '#666' }}>
-                      {statusCfg?.label ?? item.orders?.status}
-                    </span>
-                  </div>
-                )
-              })}
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            <div className="rounded-[30px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <AlertTriangle size={18} color="#B7791F" />
+                <h2 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Stok Menipis</h2>
+              </div>
+              {stokMenipis.length === 0 ? (
+                <div className="rounded-[22px] bg-[#F8FBF7] p-4 text-sm font-bold text-[#6B7C6A]">Semua stok masih aman.</div>
+              ) : (
+                <div className="space-y-2">
+                  {stokMenipis.map(item => (
+                    <button key={item.id} onClick={() => router.push('/petani/produk')} className="flex w-full items-center justify-between gap-3 rounded-[20px] bg-[#FFF8E8] p-3 text-left transition hover:-translate-y-0.5">
+                      <p className="text-sm font-extrabold text-[#0A4C3E]">{item.name}</p>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#8A5B00]">{item.stock} {item.unit}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[30px] border border-[#71BC68]/15 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Aksi Cepat</h2>
+              <div className="mt-4 grid gap-3">
+                {[
+                  { label: 'Tambah produk baru', desc: 'Upload foto, harga, dan stok.', icon: Plus, href: '/petani/produk' },
+                  { label: 'Kelola pesanan', desc: 'Proses dan kirim pesanan.', icon: ClipboardList, href: '/petani/pesanan' },
+                  { label: 'Edit profil toko', desc: 'Rapikan identitas toko tani.', icon: CheckCircle2, href: '/petani/profil' },
+                ].map(action => (
+                  <button key={action.label} onClick={() => router.push(action.href)} className="flex items-center gap-3 rounded-[22px] bg-[#F8FBF7] p-4 text-left transition hover:-translate-y-0.5 hover:bg-[#F0F8EE]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#0A4C3E]"><action.icon size={18} /></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-extrabold text-[#0A4C3E]">{action.label}</p>
+                      <p className="mt-0.5 text-xs text-[#6B7C6A]">{action.desc}</p>
+                    </div>
+                    <ArrowRight size={16} color="#8AA08A" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

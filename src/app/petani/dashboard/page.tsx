@@ -1,73 +1,109 @@
+import { unstable_noStore as noStore } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getFarmerOrders, getFarmerStats } from '@/lib/queries/farmer'
 import PetaniHomeClient from './PetaniHomeClient'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function PetaniDashboardPage() {
+  noStore()
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
   if (profile?.role !== 'petani') redirect('/home')
 
-  // Total produk aktif
-  const { count: totalProduk } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .eq('farmer_id', user.id)
-    .eq('is_active', true)
+  const [orderItems, stats] = await Promise.all([
+    getFarmerOrders(user.id),
+    getFarmerStats(user.id),
+  ])
 
-  // Pesanan terbaru
-  const { data: pesananMasukRaw } = await supabase
-    .from('order_items')
-    .select(`id, product_name, quantity, subtotal, created_at, order_id, orders(id, order_number, status, buyer_id)`)
-    .eq('farmer_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  const pesananMasuk = (pesananMasukRaw ?? []).map((item: any) => ({
-    ...item,
-    orders: Array.isArray(item.orders) ? (item.orders[0] ?? null) : item.orders
+  const normalizedItems = (orderItems ?? []).map((item: any) => ({
+    id: item.id,
+    product_id: item.product_id,
+    product_name: item.product_name,
+    quantity: Number(item.quantity ?? 0),
+    subtotal: Number(item.subtotal ?? 0),
+    created_at: item.created_at,
+    order_id: item.order_id,
+    orders: item.orders,
   }))
 
-  // Hitung pesanan yang perlu aksi (paid = perlu diproses, processing = perlu dikirim)
-  const { data: allOrders } = await supabase
-    .from('order_items')
-    .select('order_id, orders(id, status)')
-    .eq('farmer_id', user.id)
+  const orderMap = new Map<string, any>()
 
-  // Ambil unique order ids yang perlu aksi
-  const orderIds = new Set<string>()
-  const orderStatuses: Record<string, string> = {}
+  for (const item of normalizedItems) {
+    const order = item.orders
+    const key = item.order_id || order?.id || item.id
 
-  for (const item of allOrders ?? []) {
-    const order = Array.isArray((item as any).orders) ? (item as any).orders[0] : (item as any).orders
-    if (order?.id && order?.status) {
-      orderIds.add(order.id)
-      orderStatuses[order.id] = order.status
+    if (!orderMap.has(key)) {
+      orderMap.set(key, {
+        id: order?.id ?? key,
+        order_number: order?.order_number ?? '-',
+        status: order?.status ?? 'pending',
+        payment_status: order?.payment_status ?? null,
+        created_at: order?.created_at ?? item.created_at,
+        tracking_number: order?.tracking_number ?? null,
+        total: 0,
+        total_items: 0,
+        items: [],
+      })
     }
+
+    const current = orderMap.get(key)
+    current.total += item.subtotal
+    current.total_items += item.quantity
+    current.items.push({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+    })
   }
 
-  const pesananPerluAksi = Array.from(orderIds).filter(
-    id => orderStatuses[id] === 'paid' || orderStatuses[id] === 'processing'
-  ).length
+  const orderSummary = Array.from(orderMap.values()).sort((a, b) => {
+    return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+  })
 
-  // Total pendapatan dari pesanan done
-  const { data: pendapatanData } = await supabase
-    .from('order_items')
-    .select('subtotal, orders(status)')
-    .eq('farmer_id', user.id)
+  const pesananTerbaru = orderSummary.slice(0, 6)
+  const pesananPerluProses = orderSummary.filter(order => order.status === 'paid').length
+  const pesananDiproses = orderSummary.filter(order => order.status === 'processing').length
+  const pesananDikirim = orderSummary.filter(order => order.status === 'shipped').length
+  const pesananSelesai = orderSummary.filter(order => order.status === 'done').length
+  const pesananDibatalkan = orderSummary.filter(order => order.status === 'cancelled').length
+  const pesananBelumBayar = orderSummary.filter(order => order.status === 'pending').length
 
-  const totalPendapatan = (pendapatanData ?? [])
-    .filter((item: any) => {
-      const o = Array.isArray(item.orders) ? item.orders[0] : item.orders
-      return o?.status === 'done'
-    })
-    .reduce((sum: number, item: any) => sum + (item.subtotal ?? 0), 0)
+  const revenuePaidOrDone = orderSummary
+    .filter(order => ['paid', 'processing', 'shipped', 'done'].includes(order.status))
+    .reduce((sum, order) => sum + Number(order.total ?? 0), 0)
 
-  // Notifikasi belum dibaca
+  const totalProdukTerjual = normalizedItems
+    .filter(item => item.orders?.status === 'done')
+    .reduce((sum, item) => sum + Number(item.quantity ?? 0), 0)
+
+  const productSalesMap = new Map<string, { name: string; sold: number; revenue: number }>()
+  for (const item of normalizedItems) {
+    if (item.orders?.status !== 'done') continue
+    const key = item.product_id ?? item.product_name
+    const current = productSalesMap.get(key) ?? { name: item.product_name, sold: 0, revenue: 0 }
+    current.sold += Number(item.quantity ?? 0)
+    current.revenue += Number(item.subtotal ?? 0)
+    productSalesMap.set(key, current)
+  }
+
+  const produkTerlaris = Array.from(productSalesMap.values())
+    .sort((a, b) => b.sold - a.sold || b.revenue - a.revenue)
+    .slice(0, 5)
+
   const { data: notifikasi } = await supabase
     .from('notifications')
     .select('*')
@@ -76,7 +112,6 @@ export default async function PetaniDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Stok menipis
   const { data: stokMenipis } = await supabase
     .from('products')
     .select('id, name, stock, unit')
@@ -84,17 +119,27 @@ export default async function PetaniDashboardPage() {
     .eq('is_active', true)
     .lte('stock', 5)
     .gt('stock', 0)
-    .limit(5)
+    .limit(8)
 
   return (
     <PetaniHomeClient
       profile={profile}
-      totalProduk={totalProduk ?? 0}
-      totalPendapatan={totalPendapatan}
-      pesananMasuk={pesananMasuk}
+      totalProduk={stats.totalProduk}
+      totalPendapatan={stats.totalPendapatan}
+      revenuePaidOrDone={revenuePaidOrDone}
+      totalProdukTerjual={totalProdukTerjual}
+      totalPesanan={orderSummary.length}
+      pesananTerbaru={pesananTerbaru}
       notifikasi={notifikasi ?? []}
       stokMenipis={stokMenipis ?? []}
-      pesananPerluAksi={pesananPerluAksi}
+      produkTerlaris={produkTerlaris}
+      pesananPerluAksi={stats.pesananPerluAksi}
+      pesananPerluProses={pesananPerluProses}
+      pesananDiproses={pesananDiproses}
+      pesananDikirim={pesananDikirim}
+      pesananSelesai={pesananSelesai}
+      pesananDibatalkan={pesananDibatalkan}
+      pesananBelumBayar={pesananBelumBayar}
     />
   )
 }

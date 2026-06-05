@@ -1,78 +1,94 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import {
-  Package, Clock, Truck, CheckCircle, XCircle,
-  ChevronDown, ChevronUp, Search, MapPin, Hash, Loader
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { useMemo, useState } from 'react'
+import { CheckCircle2, ChevronDown, ChevronUp, Clock, MapPin, Package, Search, Truck, XCircle } from 'lucide-react'
 
 interface Order {
-  id: string; order_number: string; status: string
-  payment_status: string; shipping_name: string
-  shipping_phone: string; shipping_address: string
-  shipping_courier: string | null; tracking_number: string | null
-  created_at: string; buyer_id: string
+  id: string
+  order_number: string
+  status: string
+  payment_status: string
+  shipping_name: string
+  shipping_phone: string
+  shipping_address: string
+  shipping_courier: string | null
+  tracking_number: string | null
+  created_at: string
+  buyer_id: string
 }
-
 interface OrderItem {
-  id: string; order_id: string; product_name: string
-  price: number; unit: string; quantity: number; subtotal: number
-  created_at: string; orders: Order | null
+  id: string
+  order_id: string
+  product_name: string
+  price: number
+  unit: string
+  quantity: number
+  subtotal: number
+  created_at: string
+  orders: Order | null
 }
+interface Props { orderItems: OrderItem[]; farmerId: string }
 
-interface Props {
-  orderItems: OrderItem[]
-  farmerId: string
+type StatusConfig = { label: string; sublabel: string; bg: string; color: string; icon: typeof Clock }
+const STATUS: Record<string, StatusConfig> = {
+  pending: { label: 'Menunggu Bayar', sublabel: 'Pembeli belum menyelesaikan pembayaran', bg: '#FFF5D6', color: '#8A5B00', icon: Clock },
+  paid: { label: 'Perlu Diproses', sublabel: 'Pembayaran berhasil, segera siapkan pesanan', bg: '#E7F0FF', color: '#0B4A8B', icon: Package },
+  processing: { label: 'Sedang Diproses', sublabel: 'Pesanan sedang disiapkan untuk dikirim', bg: '#E7F8EE', color: '#0A4C3E', icon: Package },
+  shipped: { label: 'Dikirim', sublabel: 'Pesanan sedang dalam perjalanan', bg: '#EEF2FF', color: '#3730A3', icon: Truck },
+  done: { label: 'Selesai', sublabel: 'Pesanan diterima pembeli', bg: '#E7F8EE', color: '#166534', icon: CheckCircle2 },
+  cancelled: { label: 'Dibatalkan', sublabel: 'Pesanan telah dibatalkan', bg: '#FFE8E8', color: '#B42318', icon: XCircle },
 }
-
-const STATUS_CONFIG: Record<string, { label: string; sublabel: string; color: string; bg: string; icon: any }> = {
-  pending:    { label: 'Menunggu Bayar',   sublabel: 'Belum dibayar pembeli',         color: '#856404', bg: '#FFF3CD', icon: Clock },
-  paid:       { label: 'Perlu Diproses',   sublabel: 'Pembayaran masuk, segera proses', color: '#004085', bg: '#CCE5FF', icon: Package },
-  processing: { label: 'Sedang Diproses',  sublabel: 'Siapkan pesanan untuk dikirim',  color: '#0A4C3E', bg: '#D0ECD6', icon: Package },
-  shipped:    { label: 'Sudah Dikirim',    sublabel: 'Menunggu konfirmasi pembeli',    color: '#155724', bg: '#D4EDDA', icon: Truck },
-  done:       { label: 'Selesai',          sublabel: 'Pesanan selesai',               color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
-  cancelled:  { label: 'Dibatalkan',       sublabel: 'Pesanan dibatalkan',            color: '#721c24', bg: '#F8D7DA', icon: XCircle },
-}
-
-const FILTER_TABS = [
-  { key: 'all',        label: 'Semua' },
-  { key: 'paid',       label: 'Perlu Aksi', urgent: true },
-  { key: 'processing', label: 'Diproses' },
-  { key: 'shipped',    label: 'Dikirim' },
-  { key: 'done',       label: 'Selesai' },
+const TABS = [
+  { key: 'all', label: 'Semua' }, { key: 'paid', label: 'Perlu Aksi' }, { key: 'processing', label: 'Diproses' }, { key: 'shipped', label: 'Dikirim' }, { key: 'done', label: 'Selesai' },
 ]
+
+function formatRp(value: number) { return `Rp ${value.toLocaleString('id-ID')}` }
+function formatDate(value: string) { return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
+function generateTrackingNumber(order: Order) {
+  const courier = (order.shipping_courier || 'KTN')
+    .replace(/[^A-Z0-9]/gi, '')
+    .toUpperCase()
+    .slice(0, 3) || 'KTN'
+  const orderCode = order.order_number
+    .replace(/[^A-Z0-9]/gi, '')
+    .toUpperCase()
+    .slice(-6)
+    .padStart(6, '0')
+  const dateCode = new Date().toISOString().slice(2, 10).replace(/-/g, '')
+  const randomCode = Math.floor(1000 + Math.random() * 9000)
+  return `${courier}${dateCode}${orderCode}${randomCode}`
+}
 
 function groupByOrder(items: OrderItem[]) {
   const map = new Map<string, { order: Order; items: OrderItem[] }>()
   for (const item of items) {
     if (!item.orders) continue
-    if (!map.has(item.order_id)) {
-      map.set(item.order_id, { order: item.orders, items: [] })
-    }
+    if (!map.has(item.order_id)) map.set(item.order_id, { order: item.orders, items: [] })
     map.get(item.order_id)!.items.push(item)
   }
   return Array.from(map.values())
 }
 
-export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
-  const router = useRouter()
+export default function PetaniPesananClient({ orderItems }: Props) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [updating, setUpdating] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null)
-
-  // State resi
-  const [resiInputOpen, setResiInputOpen] = useState<string | null>(null)
-  const [resiValue, setResiValue] = useState('')
-  const [savingResi, setSavingResi] = useState(false)
   const [trackingMap, setTrackingMap] = useState<Record<string, string>>({})
-
-  // Local order status state (untuk update tanpa full refresh)
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
+
+  const grouped = useMemo(() => groupByOrder(orderItems), [orderItems])
+  const needActionCount = grouped.filter(({ order }) => ['paid', 'processing'].includes(statusMap[order.id] ?? order.status)).length
+  const revenue = orderItems.filter(i => (statusMap[i.order_id] ?? i.orders?.status) === 'done').reduce((sum, i) => sum + i.subtotal, 0)
+  const filtered = grouped.filter(({ order }) => {
+    const currentStatus = statusMap[order.id] ?? order.status
+    const q = search.toLowerCase()
+    const matchesSearch = !q || order.order_number.toLowerCase().includes(q) || order.shipping_name.toLowerCase().includes(q)
+    const matchesFilter = filter === 'all' || currentStatus === filter
+    return matchesSearch && matchesFilter
+  })
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type })
@@ -87,437 +103,115 @@ export default function PetaniPesananClient({ orderItems, farmerId }: Props) {
     })
   }
 
-  async function handleUpdateStatus(orderId: string, newStatus: string) {
-    setUpdating(orderId)
-    const supabase = createClient()
+  async function handleUpdateStatus(order: Order, newStatus: string) {
+    setUpdating(order.id)
 
-    const updateData: Record<string, any> = { status: newStatus }
-    if (newStatus === 'shipped') updateData.shipped_at = new Date().toISOString()
+    try {
+      const res = await fetch('/api/petani/orders/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, status: newStatus }),
+      })
 
-    const { error } = await supabase.from('orders').update(updateData).eq('id', orderId)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Gagal update status')
 
-    if (error) {
-      showToast('Gagal update status', 'error')
-    } else {
-      setStatusMap(prev => ({ ...prev, [orderId]: newStatus }))
-      showToast(`Status diubah: ${STATUS_CONFIG[newStatus]?.label}`)
+      const updatedStatus = data.order?.status ?? newStatus
+      const updatedTrackingNumber = data.order?.tracking_number ?? null
+
+      setStatusMap(prev => ({ ...prev, [order.id]: updatedStatus }))
+      if (updatedTrackingNumber) {
+        setTrackingMap(prev => ({ ...prev, [order.id]: updatedTrackingNumber }))
+      }
       setConfirmCancel(null)
+      showToast(
+        updatedStatus === 'shipped'
+          ? `Pesanan dikirim. Resi otomatis: ${updatedTrackingNumber}`
+          : `Status diubah: ${STATUS[updatedStatus]?.label ?? updatedStatus}`
+      )
+    } catch (error: any) {
+      showToast(error.message ?? 'Gagal update status', 'error')
+    } finally {
+      setUpdating(null)
     }
-    setUpdating(null)
   }
-
-  async function handleSimpanResi(orderId: string) {
-    if (!resiValue.trim()) return
-    setSavingResi(true)
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('orders')
-      .update({ tracking_number: resiValue.trim() })
-      .eq('id', orderId)
-
-    if (error) {
-      showToast('Gagal menyimpan resi', 'error')
-    } else {
-      setTrackingMap(prev => ({ ...prev, [orderId]: resiValue.trim() }))
-      showToast('Nomor resi berhasil disimpan!')
-      setResiInputOpen(null)
-      setResiValue('')
-    }
-    setSavingResi(false)
-  }
-
-  const grouped = groupByOrder(orderItems)
-
-  const filtered = grouped.filter(({ order }) => {
-    const currentStatus = statusMap[order.id] ?? order.status
-    if (filter !== 'all' && currentStatus !== filter) return false
-    if (search && !order.order_number.toLowerCase().includes(search.toLowerCase()) &&
-      !order.shipping_name.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
-
-  const needActionCount = grouped.filter(({ order }) => {
-    const s = statusMap[order.id] ?? order.status
-    return s === 'paid' || s === 'processing'
-  }).length
-
-  const totalPendapatan = orderItems
-    .filter(i => (statusMap[i.order_id] ?? i.orders?.status) === 'done')
-    .reduce((sum, i) => sum + i.subtotal, 0)
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
-      <div className="max-w-4xl mx-auto px-4 py-6">
-
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-            Pesanan Masuk
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: '#6B7C6A' }}>
-            {grouped.length} pesanan · Pendapatan: Rp {totalPendapatan.toLocaleString('id-ID')}
-          </p>
-        </div>
-
-        {/* Alert perlu aksi */}
-        {needActionCount > 0 && (
-          <div className="mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
-            style={{ background: '#CCE5FF', border: '1px solid rgba(0,64,133,0.2)' }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: '#004085' }}>
-              <Package size={15} color="white" />
+    <main className="min-h-screen bg-[#F4FAF3] px-4 pb-28 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mx-auto max-w-6xl">
+        <section className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#71BC68]">Order Management</p>
+              <h1 className="mt-2 text-2xl font-black text-[#0A4C3E] md:text-3xl" style={{ fontFamily: 'Sora, sans-serif' }}>Pesanan Masuk</h1>
+              <p className="mt-2 text-sm text-[#6B7C6A]">Proses pesanan, buat resi otomatis, dan pantau status pengiriman pembeli.</p>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold" style={{ color: '#004085' }}>
-                {needActionCount} pesanan butuh tindakan
-              </p>
-              <p className="text-xs" style={{ color: '#0c5460' }}>
-                Segera proses agar pembeli tidak menunggu lama
-              </p>
+            <div className="grid grid-cols-2 gap-3 md:w-[360px]">
+              <div className="rounded-[24px] bg-[#F8FBF7] p-4"><p className="text-xs font-bold text-[#6B7C6A]">Total Pesanan</p><p className="mt-2 text-2xl font-black text-[#0A4C3E]">{grouped.length}</p></div>
+              <div className="rounded-[24px] bg-[#E7F0FF] p-4"><p className="text-xs font-bold text-[#0B4A8B]">Perlu Aksi</p><p className="mt-2 text-2xl font-black text-[#0B4A8B]">{needActionCount}</p></div>
             </div>
           </div>
-        )}
+          <div className="mt-5 rounded-[24px] bg-[#0A4C3E] p-4 text-white">
+            <p className="text-xs font-bold text-white/60">Pendapatan Pesanan Selesai</p>
+            <p className="mt-1 text-2xl font-black text-[#71BC68]" style={{ fontFamily: 'Sora, sans-serif' }}>{formatRp(revenue)}</p>
+          </div>
+        </section>
 
-        {/* Search */}
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-xl mb-4"
-          style={{ border: '1px solid rgba(113,188,104,0.2)' }}>
-          <Search size={16} color="#9CA3AF" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nomor order atau nama pembeli..."
-            className="flex-1 text-sm bg-transparent outline-none"
-            style={{ color: '#0A4C3E' }} />
+        {needActionCount > 0 && <div className="mt-5 flex items-center gap-4 rounded-[28px] border border-[#0B4A8B]/10 bg-[#E7F0FF] p-4"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0B4A8B] text-white"><Package size={20} /></div><div><p className="font-black text-[#0B4A8B]">{needActionCount} pesanan butuh tindakan</p><p className="text-sm text-[#49645B]">Segera proses pesanan agar pengalaman pembeli tetap baik.</p></div></div>}
+
+        <div className="mt-5 flex flex-col gap-3 rounded-[28px] bg-white p-3 shadow-sm ring-1 ring-[#71BC68]/15 md:flex-row md:items-center">
+          <div className="flex flex-1 items-center gap-2 rounded-2xl bg-[#F8FBF7] px-4 py-3"><Search size={18} color="#8AA08A" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nomor order atau nama pembeli..." className="w-full bg-transparent text-sm font-medium text-[#0A4C3E] outline-none placeholder:text-[#9CA3AF]" /></div>
+          <div className="flex gap-2 overflow-x-auto">{TABS.map(tab => <button key={tab.key} onClick={() => setFilter(tab.key)} className="shrink-0 rounded-2xl px-4 py-2 text-xs font-black" style={{ background: filter === tab.key ? '#0A4C3E' : '#F8FBF7', color: filter === tab.key ? '#71BC68' : '#6B7C6A' }}>{tab.label}{tab.key === 'paid' && needActionCount > 0 ? ` (${needActionCount})` : ''}</button>)}</div>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-5" style={{ scrollbarWidth: 'none' }}>
-          {FILTER_TABS.map(tab => {
-            const isPaid = tab.key === 'paid'
-            const count = isPaid ? needActionCount : 0
-            return (
-              <button key={tab.key} onClick={() => setFilter(tab.key)}
-                className="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 relative"
-                style={{
-                  background: filter === tab.key ? '#0A4C3E' : 'white',
-                  color: filter === tab.key ? '#71BC68' : '#6B7C6A',
-                  border: `1px solid ${tab.urgent && count > 0 ? 'rgba(0,64,133,0.3)' : 'rgba(113,188,104,0.2)'}`,
-                }}>
-                {tab.label}
-                {isPaid && count > 0 && (
-                  <span className="ml-1.5 text-xs font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: filter === tab.key ? '#71BC68' : '#CCE5FF', color: filter === tab.key ? '#0A4C3E' : '#004085' }}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Order list */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl"
-            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <Package size={36} color="#ccc" className="mx-auto mb-3" />
-            <p className="font-bold" style={{ color: '#0A4C3E' }}>Belum ada pesanan</p>
-            <p className="text-sm mt-1" style={{ color: '#6B7C6A' }}>
-              {filter !== 'all' ? 'Coba filter lain' : 'Pesanan akan muncul di sini'}
-            </p>
-          </div>
+          <div className="mt-5 rounded-[32px] bg-white py-20 text-center shadow-sm ring-1 ring-[#71BC68]/15"><Package className="mx-auto mb-3" size={42} color="#9CA3AF" /><p className="font-black text-[#0A4C3E]">Belum ada pesanan</p><p className="mt-1 text-sm text-[#6B7C6A]">Pesanan akan muncul sesuai filter yang dipilih.</p></div>
         ) : (
-          <div className="space-y-3">
+          <div className="mt-5 space-y-4">
             {filtered.map(({ order, items }) => {
               const currentStatus = statusMap[order.id] ?? order.status
-              const cfg = STATUS_CONFIG[currentStatus] ?? STATUS_CONFIG.pending
-              const StatusIcon = cfg.icon
-              const isExpanded = expanded.has(order.id)
-              const totalItem = items.reduce((s, i) => s + i.subtotal, 0)
-              const currentTracking = trackingMap[order.id] ?? order.tracking_number
-              const isResiOpen = resiInputOpen === order.id
-              const isCancelConfirming = confirmCancel === order.id
-
-              const isPaid = currentStatus === 'paid'
-              const isProcessing = currentStatus === 'processing'
-              const isShipped = currentStatus === 'shipped'
-              const isDone = currentStatus === 'done'
-              const needsAction = isPaid || isProcessing
-
+              const cfg = STATUS[currentStatus] ?? STATUS.pending
+              const Icon = cfg.icon
+              const total = items.reduce((sum, item) => sum + item.subtotal, 0)
+              const isOpen = expanded.has(order.id)
+              const tracking = trackingMap[order.id] ?? order.tracking_number ?? ''
               return (
-                <div key={order.id} className="bg-white rounded-2xl overflow-hidden"
-                  style={{
-                    border: `1.5px solid ${needsAction ? 'rgba(0,64,133,0.25)' : 'rgba(113,188,104,0.15)'}`,
-                  }}>
-
-                  {/* Header */}
-                  <div className="px-4 pt-3 pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ background: cfg.bg }}>
-                          <StatusIcon size={16} color={cfg.color} />
-                        </div>
+                <article key={order.id} className="overflow-hidden rounded-[30px] bg-white shadow-sm ring-1 ring-[#71BC68]/15">
+                  <div className="p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="flex gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: cfg.bg, color: cfg.color }}><Icon size={22} /></div>
                         <div>
-                          <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
-                            #{order.order_number}
-                          </p>
-                          <p className="text-xs" style={{ color: '#6B7C6A' }}>
-                            {order.shipping_name} · {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-2"><h2 className="font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{order.order_number}</h2><span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span></div>
+                          <p className="mt-1 text-sm text-[#6B7C6A]">{cfg.sublabel}</p>
+                          <p className="mt-1 text-xs font-bold text-[#8AA08A]">{formatDate(order.created_at)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                          style={{ background: cfg.bg, color: cfg.color }}>
-                          {cfg.label}
-                        </span>
-                        <button onClick={() => toggleExpand(order.id)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center"
-                          style={{ background: '#f3f4f6' }}>
-                          {isExpanded ? <ChevronUp size={14} color="#6B7C6A" /> : <ChevronDown size={14} color="#6B7C6A" />}
-                        </button>
-                      </div>
+                      <div className="text-left md:text-right"><p className="text-xs font-bold text-[#6B7C6A]">Total Item</p><p className="font-black text-[#0A4C3E]">{formatRp(total)}</p></div>
                     </div>
 
-                    {/* Sublabel + total */}
-                    <p className="text-xs mt-1 ml-12" style={{ color: cfg.color, fontWeight: 500 }}>
-                      {cfg.sublabel}
-                    </p>
-                    <div className="flex justify-between items-center mt-2 pt-2"
-                      style={{ borderTop: '1px solid #f3f4f6' }}>
-                      <p className="text-xs" style={{ color: '#6B7C6A' }}>
-                        {items.length} produk · {order.shipping_courier ?? 'Kurir'}
-                      </p>
-                      <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
-                        Rp {totalItem.toLocaleString('id-ID')}
-                      </p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+                      <div className="rounded-[22px] bg-[#F8FBF7] p-4"><p className="text-xs font-black text-[#6B7C6A]">Pembeli</p><p className="mt-1 font-black text-[#0A4C3E]">{order.shipping_name}</p><p className="text-sm text-[#6B7C6A]">{order.shipping_phone}</p></div>
+                      <div className="flex flex-wrap gap-2">
+                        {currentStatus === 'paid' && <><button onClick={() => handleUpdateStatus(order, 'processing')} disabled={updating === order.id} className="rounded-2xl bg-[#0A4C3E] px-4 py-2.5 text-sm font-black text-[#71BC68] disabled:opacity-60">{updating === order.id ? 'Memproses...' : 'Proses'}</button><button onClick={() => setConfirmCancel(order.id)} className="rounded-2xl bg-[#FFF4F4] px-4 py-2.5 text-sm font-black text-[#C92A2A]">Tolak</button></>}
+                        {currentStatus === 'processing' && <button onClick={() => handleUpdateStatus(order, 'shipped')} disabled={updating === order.id} className="rounded-2xl bg-[#0A4C3E] px-4 py-2.5 text-sm font-black text-[#71BC68] disabled:opacity-60">{updating === order.id ? 'Mengirim...' : 'Tandai Dikirim'}</button>}
+                        <button onClick={() => toggleExpand(order.id)} className="inline-flex items-center gap-2 rounded-2xl bg-[#F0F8EE] px-4 py-2.5 text-sm font-black text-[#0A4C3E]">Detail {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* ── TOMBOL AKSI LANGSUNG KELIHATAN ── */}
+                  {currentStatus === 'shipped' && <div className="px-5 pb-5"><div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#F8FBF7] p-4"><div><p className="text-xs font-black text-[#6B7C6A]">Nomor Resi Otomatis</p><p className="font-mono text-sm font-black tracking-wider text-[#0A4C3E]">{tracking || 'Sedang dibuat otomatis...'}</p></div><span className="rounded-2xl bg-white px-4 py-2 text-xs font-black text-[#0A4C3E] ring-1 ring-[#71BC68]/20">Auto</span></div></div>}
 
-                  {/* PAID → Proses Pesanan */}
-                  {isPaid && !isCancelConfirming && (
-                    <div className="px-4 pb-3 flex gap-2">
-                      <button
-                        onClick={() => handleUpdateStatus(order.id, 'processing')}
-                        disabled={updating === order.id}
-                        className="flex-1 py-2.5 rounded-xl text-sm font-bold transition hover:opacity-90 flex items-center justify-center gap-2"
-                        style={{ background: '#0A4C3E', color: '#71BC68' }}>
-                        {updating === order.id
-                          ? <><Loader size={14} className="animate-spin" /> Memproses...</>
-                          : '✓ Proses Pesanan Ini'}
-                      </button>
-                      <button
-                        onClick={() => setConfirmCancel(order.id)}
-                        className="px-4 py-2.5 rounded-xl text-xs font-bold"
-                        style={{ background: '#FEE2E2', color: '#dc3545' }}>
-                        Tolak
-                      </button>
-                    </div>
-                  )}
+                  {confirmCancel === order.id && <div className="mx-5 mb-5 rounded-[22px] border border-[#C92A2A]/20 bg-[#FFF4F4] p-4"><p className="font-black text-[#C92A2A]">Tolak pesanan ini?</p><p className="mt-1 text-sm text-[#6B7C6A]">Pesanan akan dibatalkan dan pembeli mendapat notifikasi.</p><div className="mt-3 flex gap-2"><button onClick={() => setConfirmCancel(null)} className="flex-1 rounded-2xl bg-white py-2.5 text-sm font-black text-[#6B7C6A]">Batal</button><button onClick={() => handleUpdateStatus(order, 'cancelled')} disabled={updating === order.id} className="flex-1 rounded-2xl bg-[#C92A2A] py-2.5 text-sm font-black text-white">Ya, Tolak</button></div></div>}
 
-                  {/* PROCESSING → Tandai Dikirim */}
-                  {isProcessing && !isResiOpen && (
-                    <div className="px-4 pb-3">
-                      <button
-                        onClick={() => {
-                          handleUpdateStatus(order.id, 'shipped')
-                          // Langsung buka input resi setelah tandai dikirim
-                          setTimeout(() => setResiInputOpen(order.id), 300)
-                        }}
-                        disabled={updating === order.id}
-                        className="w-full py-2.5 rounded-xl text-sm font-bold transition hover:opacity-90 flex items-center justify-center gap-2"
-                        style={{ background: '#0A4C3E', color: '#71BC68' }}>
-                        {updating === order.id
-                          ? <><Loader size={14} className="animate-spin" /> Memproses...</>
-                          : <><Truck size={15} /> Tandai Sudah Dikirim</>}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* SHIPPED → Input / tampil resi */}
-                  {isShipped && (
-                    <div className="px-4 pb-3">
-                      {currentTracking && !isResiOpen ? (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                          style={{ background: '#F4FAF3', border: '1px solid rgba(113,188,104,0.3)' }}>
-                          <div className="flex-1">
-                            <p className="text-xs font-bold" style={{ color: '#0A4C3E' }}>No. Resi Pengiriman</p>
-                            <p className="text-sm font-bold tracking-widest" style={{ color: '#0A4C3E' }}>
-                              {currentTracking}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => { setResiInputOpen(order.id); setResiValue(currentTracking) }}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                            style={{ background: 'white', color: '#0A4C3E', border: '1px solid rgba(113,188,104,0.3)' }}>
-                            Edit
-                          </button>
-                        </div>
-                      ) : !isResiOpen ? (
-                        <button
-                          onClick={() => { setResiInputOpen(order.id); setResiValue('') }}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold"
-                          style={{ background: '#FFF3CD', color: '#856404', border: '1.5px dashed rgba(133,100,4,0.3)' }}>
-                          <Hash size={14} />
-                          + Input Nomor Resi Pengiriman
-                        </button>
-                      ) : null}
-
-                      {/* Form input resi */}
-                      {isResiOpen && (
-                        <div className="rounded-xl overflow-hidden"
-                          style={{ border: '1.5px solid #71BC68' }}>
-                          <div className="px-4 py-3" style={{ background: '#F4FAF3' }}>
-                            <p className="text-xs font-bold mb-2" style={{ color: '#0A4C3E' }}>
-                              Input Nomor Resi Pengiriman
-                            </p>
-                            <input
-                              type="text"
-                              value={resiValue}
-                              onChange={e => setResiValue(e.target.value.toUpperCase())}
-                              placeholder="Contoh: JNE123456789ID"
-                              autoFocus
-                              onKeyDown={e => e.key === 'Enter' && handleSimpanResi(order.id)}
-                              style={{
-                                width: '100%', padding: '10px 12px', borderRadius: '10px',
-                                border: '1.5px solid rgba(113,188,104,0.3)', background: 'white',
-                                fontSize: '14px', fontWeight: 700, color: '#0A4C3E',
-                                fontFamily: 'monospace', letterSpacing: '0.05em',
-                                outline: 'none', boxSizing: 'border-box',
-                              }}
-                            />
-                            <p className="text-xs mt-1.5" style={{ color: '#6B7C6A' }}>
-                              Nomor resi akan ditampilkan ke pembeli
-                            </p>
-                          </div>
-                          <div className="flex gap-2 p-3" style={{ background: 'white' }}>
-                            <button
-                              onClick={() => { setResiInputOpen(null); setResiValue('') }}
-                              className="flex-1 py-2 rounded-lg text-xs font-bold"
-                              style={{ background: '#f3f4f6', color: '#6B7C6A' }}>
-                              Batal
-                            </button>
-                            <button
-                              onClick={() => handleSimpanResi(order.id)}
-                              disabled={savingResi || !resiValue.trim()}
-                              className="flex-1 py-2 rounded-lg text-xs font-bold"
-                              style={{
-                                background: resiValue.trim() ? '#0A4C3E' : '#ccc',
-                                color: resiValue.trim() ? '#71BC68' : 'white',
-                              }}>
-                              {savingResi ? 'Menyimpan...' : 'Simpan Resi'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* DONE → info selesai */}
-                  {isDone && (
-                    <div className="px-4 pb-3">
-                      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                        style={{ background: '#D4EDDA', border: '1px solid rgba(21,87,36,0.15)' }}>
-                        <CheckCircle size={14} color="#155724" />
-                        <p className="text-xs font-medium" style={{ color: '#155724' }}>
-                          Pesanan telah diterima pembeli · Pendapatan masuk
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dialog konfirmasi tolak */}
-                  {isCancelConfirming && (
-                    <div className="mx-4 mb-3 rounded-xl overflow-hidden"
-                      style={{ border: '1.5px solid #dc3545' }}>
-                      <div className="px-4 py-3" style={{ background: '#FFF5F5' }}>
-                        <p className="text-sm font-bold" style={{ color: '#dc3545' }}>Tolak pesanan ini?</p>
-                        <p className="text-xs mt-1" style={{ color: '#6B7C6A', lineHeight: 1.5 }}>
-                          Pesanan akan dibatalkan dan pembeli akan mendapat notifikasi. Tindakan ini tidak dapat dibatalkan.
-                        </p>
-                      </div>
-                      <div className="flex gap-2 p-3" style={{ background: 'white' }}>
-                        <button onClick={() => setConfirmCancel(null)}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-bold"
-                          style={{ background: '#f3f4f6', color: '#6B7C6A' }}>
-                          Kembali
-                        </button>
-                        <button
-                          onClick={() => handleUpdateStatus(order.id, 'cancelled')}
-                          disabled={updating === order.id}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-bold"
-                          style={{ background: '#dc3545', color: 'white' }}>
-                          {updating === order.id ? 'Memproses...' : 'Ya, Tolak Pesanan'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── DETAIL EXPAND ── */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4" style={{ borderTop: '1px solid #f3f4f6' }}>
-
-                      {/* Items */}
-                      <div className="space-y-2 mt-3">
-                        {items.map(item => (
-                          <div key={item.id} className="flex justify-between py-2"
-                            style={{ borderBottom: '1px solid #f9f9f9' }}>
-                            <div>
-                              <p className="text-sm font-medium" style={{ color: '#0A4C3E' }}>{item.product_name}</p>
-                              <p className="text-xs" style={{ color: '#6B7C6A' }}>
-                                {item.quantity} {item.unit} × Rp {item.price.toLocaleString('id-ID')}
-                              </p>
-                            </div>
-                            <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
-                              Rp {item.subtotal.toLocaleString('id-ID')}
-                            </p>
-                          </div>
-                        ))}
-                        <div className="flex justify-between pt-1">
-                          <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>Total</p>
-                          <p className="text-sm font-bold" style={{ color: '#71BC68' }}>
-                            Rp {totalItem.toLocaleString('id-ID')}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Info pengiriman */}
-                      <div className="mt-3 p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <MapPin size={13} color="#71BC68" />
-                          <p className="text-xs font-bold" style={{ color: '#0A4C3E' }}>Alamat Pengiriman</p>
-                        </div>
-                        <p className="text-xs font-semibold" style={{ color: '#0A4C3E' }}>
-                          {order.shipping_name}
-                        </p>
-                        <p className="text-xs" style={{ color: '#6B7C6A' }}>{order.shipping_phone}</p>
-                        <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>{order.shipping_address}</p>
-                        {order.shipping_courier && (
-                          <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>
-                            Kurir: <span className="font-semibold" style={{ color: '#0A4C3E' }}>{order.shipping_courier}</span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  {isOpen && <div className="border-t border-[#71BC68]/10 p-5"><div className="grid gap-5 lg:grid-cols-[1fr_0.85fr]"><div><p className="mb-3 text-sm font-black text-[#0A4C3E]">Daftar Produk</p><div className="space-y-2">{items.map(item => <div key={item.id} className="flex justify-between gap-3 rounded-2xl bg-[#F8FBF7] p-3"><div><p className="font-bold text-[#0A4C3E]">{item.product_name}</p><p className="text-xs text-[#6B7C6A]">{item.quantity} {item.unit} × {formatRp(item.price)}</p></div><p className="font-black text-[#0A4C3E]">{formatRp(item.subtotal)}</p></div>)}</div></div><div className="rounded-[24px] bg-[#F8FBF7] p-4"><div className="mb-2 flex items-center gap-2"><MapPin size={16} color="#0A4C3E" /><p className="text-sm font-black text-[#0A4C3E]">Alamat Pengiriman</p></div><p className="font-bold text-[#0A4C3E]">{order.shipping_name}</p><p className="text-sm text-[#6B7C6A]">{order.shipping_address}</p>{order.shipping_courier && <p className="mt-2 text-sm font-bold text-[#0A4C3E]">Kurir: {order.shipping_courier}</p>}</div></div></div>}
+                </article>
               )
             })}
           </div>
         )}
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold"
-          style={{
-            background: toast.type === 'success' ? '#0A4C3E' : '#dc3545',
-            color: 'white', minWidth: '220px', textAlign: 'center',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
-          }}>
-          {toast.msg}
-        </div>
-      )}
-    </div>
+      {toast && <div className="fixed bottom-24 left-1/2 z-50 min-w-[220px] -translate-x-1/2 rounded-2xl px-5 py-3 text-center text-sm font-black text-white shadow-xl md:bottom-8" style={{ background: toast.type === 'success' ? '#0A4C3E' : '#C92A2A' }}>{toast.msg}</div>}
+    </main>
   )
 }
