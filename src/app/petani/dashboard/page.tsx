@@ -11,7 +11,10 @@ export default async function PetaniDashboardPage() {
   noStore()
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
@@ -21,6 +24,16 @@ export default async function PetaniDashboardPage() {
     .single()
 
   if (profile?.role !== 'petani') redirect('/home')
+
+  const { data: farmerProfile } = await supabase
+    .from('farmer_profiles')
+    .select('verify_status')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (farmerProfile?.verify_status !== 'approved') {
+    redirect('/petani/menunggu-verifikasi')
+  }
 
   const [orderItems, stats] = await Promise.all([
     getFarmerOrders(user.id),
@@ -75,26 +88,33 @@ export default async function PetaniDashboardPage() {
   })
 
   const pesananTerbaru = orderSummary.slice(0, 6)
-  const pesananPerluProses = orderSummary.filter(order => order.status === 'paid').length
-  const pesananDiproses = orderSummary.filter(order => order.status === 'processing').length
-  const pesananDikirim = orderSummary.filter(order => order.status === 'shipped').length
-  const pesananSelesai = orderSummary.filter(order => order.status === 'done').length
-  const pesananDibatalkan = orderSummary.filter(order => order.status === 'cancelled').length
-  const pesananBelumBayar = orderSummary.filter(order => order.status === 'pending').length
+  const pesananPerluProses = orderSummary.filter((order) => order.status === 'paid').length
+  const pesananDiproses = orderSummary.filter((order) => order.status === 'processing').length
+  const pesananDikirim = orderSummary.filter((order) => order.status === 'shipped').length
+  const pesananSelesai = orderSummary.filter((order) => order.status === 'done').length
+  const pesananDibatalkan = orderSummary.filter((order) => order.status === 'cancelled').length
+  const pesananBelumBayar = orderSummary.filter((order) => order.status === 'pending').length
 
   const revenuePaidOrDone = orderSummary
-    .filter(order => ['paid', 'processing', 'shipped', 'done'].includes(order.status))
+    .filter((order) => ['paid', 'processing', 'shipped', 'done'].includes(order.status))
     .reduce((sum, order) => sum + Number(order.total ?? 0), 0)
 
   const totalProdukTerjual = normalizedItems
-    .filter(item => item.orders?.status === 'done')
+    .filter((item) => item.orders?.status === 'done')
     .reduce((sum, item) => sum + Number(item.quantity ?? 0), 0)
 
   const productSalesMap = new Map<string, { name: string; sold: number; revenue: number }>()
+
   for (const item of normalizedItems) {
     if (item.orders?.status !== 'done') continue
+
     const key = item.product_id ?? item.product_name
-    const current = productSalesMap.get(key) ?? { name: item.product_name, sold: 0, revenue: 0 }
+    const current = productSalesMap.get(key) ?? {
+      name: item.product_name,
+      sold: 0,
+      revenue: 0,
+    }
+
     current.sold += Number(item.quantity ?? 0)
     current.revenue += Number(item.subtotal ?? 0)
     productSalesMap.set(key, current)

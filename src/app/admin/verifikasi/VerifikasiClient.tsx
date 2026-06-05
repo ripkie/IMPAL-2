@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeft, CheckCircle, XCircle, Clock, Search,
-  MapPin, Phone, Building2, FileText, ChevronDown, Filter
+  Building2,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  FileText,
+  MapPin,
+  Phone,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+  UserCheck,
+  XCircle,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -28,10 +38,25 @@ interface Props {
   adminId: string
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  pending: { label: 'Menunggu', color: '#856404', bg: '#FFF3CD', icon: Clock },
-  approved: { label: 'Disetujui', color: '#155724', bg: '#D4EDDA', icon: CheckCircle },
-  rejected: { label: 'Ditolak', color: '#721c24', bg: '#F8D7DA', icon: XCircle },
+const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: any; card: string }> = {
+  pending: {
+    label: 'Menunggu',
+    badge: 'bg-amber-50 text-amber-700 ring-amber-200',
+    card: 'bg-amber-50 text-amber-700',
+    icon: Clock,
+  },
+  approved: {
+    label: 'Disetujui',
+    badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    card: 'bg-emerald-50 text-emerald-700',
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: 'Ditolak',
+    badge: 'bg-red-50 text-red-700 ring-red-200',
+    card: 'bg-red-50 text-red-700',
+    icon: XCircle,
+  },
 }
 
 export default function VerifikasiClient({ petani, adminId }: Props) {
@@ -50,21 +75,25 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const filtered = list.filter(p => {
-    const matchFilter = filter === 'all' || p.verify_status === filter
-    const matchSearch = !search ||
-      p.profiles?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.farm_name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.farm_location?.toLowerCase().includes(search.toLowerCase())
-    return matchFilter && matchSearch
-  })
-
-  const counts = {
+  const counts = useMemo(() => ({
     all: list.length,
-    pending: list.filter(p => p.verify_status === 'pending').length,
-    approved: list.filter(p => p.verify_status === 'approved').length,
-    rejected: list.filter(p => p.verify_status === 'rejected').length,
-  }
+    pending: list.filter((p) => p.verify_status === 'pending').length,
+    approved: list.filter((p) => p.verify_status === 'approved').length,
+    rejected: list.filter((p) => p.verify_status === 'rejected').length,
+  }), [list])
+
+  const filtered = useMemo(() => {
+    return list.filter((p) => {
+      const matchFilter = filter === 'all' || p.verify_status === filter
+      const keyword = search.toLowerCase().trim()
+      const matchSearch = !keyword ||
+        p.profiles?.full_name?.toLowerCase().includes(keyword) ||
+        p.farm_name?.toLowerCase().includes(keyword) ||
+        p.farm_location?.toLowerCase().includes(keyword) ||
+        p.profiles?.phone?.toLowerCase().includes(keyword)
+      return matchFilter && matchSearch
+    })
+  }, [filter, list, search])
 
   async function handleApprove(petaniId: string, userId: string) {
     setLoading(petaniId)
@@ -80,12 +109,14 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       })
       .eq('id', petaniId)
 
-    if (fpError) { showToast('Gagal menyetujui', 'error'); setLoading(null); return }
+    if (fpError) {
+      showToast('Gagal menyetujui petani.', 'error')
+      setLoading(null)
+      return
+    }
 
-    // Update is_verified di profiles
     await supabase.from('profiles').update({ is_verified: true }).eq('id', userId)
 
-    // Kirim notifikasi ke petani
     await supabase.from('notifications').insert({
       user_id: userId,
       title: '🎉 Akun Petani Disetujui!',
@@ -93,91 +124,97 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       type: 'system',
     })
 
-    setList(prev => prev.map(p => p.id === petaniId ? { ...p, verify_status: 'approved' } : p))
-    showToast('Petani berhasil disetujui! ✅')
+    setList((prev) => prev.map((p) => p.id === petaniId ? { ...p, verify_status: 'approved', reject_reason: null } : p))
+    showToast('Petani berhasil disetujui.')
     setLoading(null)
   }
 
   async function handleReject() {
     if (!rejectModal || !rejectReason.trim()) return
+
     setLoading(rejectModal.id)
     const supabase = createClient()
+    const selected = list.find((p) => p.id === rejectModal.id)
 
-    const petani = list.find(p => p.id === rejectModal.id)
-    if (!petani) return
+    if (!selected) {
+      showToast('Data petani tidak ditemukan.', 'error')
+      setLoading(null)
+      return
+    }
 
+    const reason = rejectReason.trim()
     const { error } = await supabase
       .from('farmer_profiles')
       .update({
         verify_status: 'rejected',
-        reject_reason: rejectReason.trim(),
+        reject_reason: reason,
         verified_by: adminId,
         verified_at: new Date().toISOString(),
       })
       .eq('id', rejectModal.id)
 
-    if (error) { showToast('Gagal menolak', 'error'); setLoading(null); return }
+    if (error) {
+      showToast('Gagal menolak verifikasi.', 'error')
+      setLoading(null)
+      return
+    }
 
-    await supabase.from('profiles').update({ is_verified: false }).eq('id', petani.profiles?.id ?? '')
+    await supabase.from('profiles').update({ is_verified: false }).eq('id', selected.profiles?.id ?? '')
 
-    // Notifikasi ke petani
     await supabase.from('notifications').insert({
-      user_id: petani.profiles?.id,
+      user_id: selected.profiles?.id,
       title: 'Verifikasi Akun Ditolak',
-      body: `Maaf, akun petani kamu ditolak. Alasan: ${rejectReason.trim()}. Silakan perbaiki dan daftar ulang.`,
+      body: `Maaf, akun petani kamu ditolak. Alasan: ${reason}. Silakan perbaiki dan daftar ulang.`,
       type: 'system',
     })
 
-    setList(prev => prev.map(p => p.id === rejectModal.id
-      ? { ...p, verify_status: 'rejected', reject_reason: rejectReason.trim() } : p))
-    showToast('Petani ditolak')
+    setList((prev) => prev.map((p) => p.id === rejectModal.id ? { ...p, verify_status: 'rejected', reject_reason: reason } : p))
+    showToast('Status petani berhasil diperbarui.')
     setRejectModal(null)
     setRejectReason('')
     setLoading(null)
   }
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
-
-      {/* Toast */}
+    <div className="min-h-screen bg-[#F5FAF4] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
       {toast && (
-        <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-lg transition"
-          style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545' }}>
+        <div
+          className="fixed right-4 top-4 z-[80] rounded-2xl px-5 py-3 text-sm font-extrabold text-white shadow-xl lg:right-8"
+          style={{ background: toast.type === 'success' ? '#0A4C3E' : '#DC2626' }}
+        >
           {toast.msg}
         </div>
       )}
 
-      {/* Reject Modal */}
       {rejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setRejectModal(null)}>
-          <div className="w-full max-w-md bg-white rounded-3xl p-6"
-            onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-lg mb-1" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-              Tolak Verifikasi
-            </h3>
-            <p className="text-sm mb-4" style={{ color: '#6B7C6A' }}>
-              Berikan alasan penolakan untuk <strong>{rejectModal.name}</strong>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm" onClick={() => setRejectModal(null)}>
+          <div className="w-full max-w-md rounded-[30px] bg-white p-6 shadow-[0_30px_90px_rgba(0,0,0,0.22)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <XCircle size={25} />
+            </div>
+            <h3 className="mt-4 font-['Sora'] text-xl font-extrabold text-[#0A4C3E]">Tolak Verifikasi</h3>
+            <p className="mt-2 text-sm font-medium leading-6 text-[#6B7C6A]">
+              Berikan alasan penolakan untuk <b>{rejectModal.name}</b>. Alasan ini akan dikirim ke petani.
             </p>
             <textarea
               value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              rows={3}
-              placeholder="Contoh: Dokumen KTP tidak jelas, foto lahan tidak sesuai..."
-              className="w-full border rounded-xl px-4 py-3 text-sm outline-none resize-none"
-              style={{ borderColor: '#e5e7eb', fontFamily: 'DM Sans, sans-serif' }}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={4}
+              placeholder="Contoh: Dokumen KTP belum jelas atau data lahan belum lengkap."
+              className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0A4C3E] outline-none transition focus:border-[#71BC68] focus:ring-4 focus:ring-[#71BC68]/15"
             />
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => setRejectModal(null)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold border"
-                style={{ borderColor: '#e5e7eb', color: '#6B7C6A' }}>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setRejectModal(null)}
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-extrabold text-[#6B7C6A] transition hover:bg-slate-50"
+              >
                 Batal
               </button>
-              <button onClick={handleReject}
+              <button
+                onClick={handleReject}
                 disabled={!rejectReason.trim() || !!loading}
-                className="flex-1 py-3 rounded-xl text-sm font-bold transition"
-                style={{ background: !rejectReason.trim() ? '#ccc' : '#dc3545', color: 'white' }}>
+                className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
                 {loading ? 'Memproses...' : 'Tolak'}
               </button>
             </div>
@@ -185,214 +222,210 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0A4C3E 0%, #0d6b55 100%)' }}
-        className="px-6 pt-6 pb-10">
-        <div className="max-w-6xl mx-auto">
-          <button onClick={() => router.push('/admin/dashboard')}
-            className="flex items-center gap-2 text-sm mb-4 transition hover:opacity-80"
-            style={{ color: 'rgba(255,255,255,0.7)' }}>
-            <ArrowLeft size={16} /> Kembali ke Dashboard
-          </button>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
-            Verifikasi Petani
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            Review dan kelola pendaftaran petani
-          </p>
-        </div>
-      </div>
+      <div className="mx-auto max-w-7xl">
+        <section className="relative overflow-hidden rounded-[34px] border border-[#0A4C3E]/10 bg-white p-6 shadow-[0_20px_70px_rgba(10,76,62,0.08)] sm:p-8">
+          <div className="pointer-events-none absolute right-[-60px] top-[-90px] h-72 w-72 rounded-full bg-[#71BC68]/10" />
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#F0F8EE] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.22em] text-[#71BC68]">
+                <ShieldCheck size={16} />
+                Farmer Verification
+              </div>
+              <h1 className="mt-5 font-['Sora'] text-3xl font-extrabold tracking-[-1px] text-[#0A4C3E] sm:text-4xl">
+                Verifikasi Petani
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-[#6B7C6A]">
+                Review kelengkapan profil petani, dokumen pendukung, dan status pengajuan agar marketplace tetap aman.
+              </p>
+            </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-5 pb-16">
-
-        {/* Filter Tabs + Search */}
-        <div className="bg-white rounded-2xl p-4 mb-5 flex flex-col md:flex-row gap-3"
-          style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 4px 16px rgba(10,76,62,0.08)' }}>
-          
-          {/* Tabs */}
-          <div className="flex gap-2 flex-wrap">
-            {(['all', 'pending', 'approved', 'rejected'] as const).map(tab => (
-              <button key={tab} onClick={() => setFilter(tab)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition"
-                style={{
-                  background: filter === tab ? '#0A4C3E' : '#F4FAF3',
-                  color: filter === tab ? 'white' : '#6B7C6A',
-                }}>
-                {tab === 'all' ? 'Semua' : STATUS_CONFIG[tab].label}
-                <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
-                  style={{
-                    background: filter === tab ? 'rgba(255,255,255,0.2)' : 'rgba(10,76,62,0.1)',
-                    color: filter === tab ? 'white' : '#0A4C3E'
-                  }}>
-                  {counts[tab]}
-                </span>
-              </button>
-            ))}
+            <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
+              <div className="rounded-2xl bg-[#F8FCF7] p-4">
+                <p className="text-xs font-extrabold text-[#6B7C6A]">Pending</p>
+                <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-[#0A4C3E]">{counts.pending}</p>
+              </div>
+              <div className="rounded-2xl bg-emerald-50 p-4">
+                <p className="text-xs font-extrabold text-emerald-700">Approved</p>
+                <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-emerald-800">{counts.approved}</p>
+              </div>
+              <div className="rounded-2xl bg-red-50 p-4">
+                <p className="text-xs font-extrabold text-red-700">Rejected</p>
+                <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-red-800">{counts.rejected}</p>
+              </div>
+            </div>
           </div>
+        </section>
 
-          {/* Search */}
-          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-full md:max-w-xs ml-auto"
-            style={{ background: '#F4FAF3', border: '1px solid rgba(113,188,104,0.2)' }}>
-            <Search size={14} color="#6B7C6A" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cari petani..."
-              className="bg-transparent outline-none text-sm w-full"
-              style={{ color: '#0A4C3E' }} />
+        <section className="mt-5 rounded-[28px] border border-[#0A4C3E]/10 bg-white p-4 shadow-[0_16px_50px_rgba(10,76,62,0.06)]">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => {
+                const active = filter === tab
+                const label = tab === 'all' ? 'Semua' : STATUS_CONFIG[tab].label
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setFilter(tab)}
+                    className="flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold transition"
+                    style={{ background: active ? '#0A4C3E' : '#F4FAF3', color: active ? 'white' : '#49645B' }}
+                  >
+                    {label}
+                    <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ background: active ? 'rgba(255,255,255,0.16)' : 'rgba(10,76,62,0.08)' }}>
+                      {counts[tab]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl bg-[#F8FCF7] px-4 py-3 ring-1 ring-[#0A4C3E]/8 xl:w-[360px]">
+              <Search size={18} className="text-[#8A9A89]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama, kebun, lokasi, atau nomor HP..."
+                className="w-full bg-transparent text-sm font-semibold text-[#0A4C3E] outline-none placeholder:text-[#9CA3AF]"
+              />
+              <SlidersHorizontal size={17} className="text-[#8A9A89]" />
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* List */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl"
-            style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <CheckCircle size={48} color="#71BC68" className="mx-auto mb-3" />
-            <p className="font-semibold" style={{ color: '#0A4C3E' }}>Tidak ada data</p>
-            <p className="text-sm mt-1" style={{ color: '#6B7C6A' }}>Coba ganti filter atau kata kunci pencarian</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map(p => {
-              const status = STATUS_CONFIG[p.verify_status] ?? STATUS_CONFIG.pending
-              const StatusIcon = status.icon
-              const isExpanded = expandedId === p.id
+        <section className="mt-5">
+          {filtered.length === 0 ? (
+            <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[30px] border border-[#0A4C3E]/10 bg-white text-center shadow-[0_16px_50px_rgba(10,76,62,0.06)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#F0F8EE] text-[#71BC68]">
+                <CheckCircle size={34} />
+              </div>
+              <p className="mt-5 font-['Sora'] text-lg font-extrabold text-[#0A4C3E]">Tidak ada data</p>
+              <p className="mt-2 text-sm font-medium text-[#6B7C6A]">Coba ubah filter atau kata kunci pencarian.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((p) => {
+                const status = STATUS_CONFIG[p.verify_status] ?? STATUS_CONFIG.pending
+                const StatusIcon = status.icon
+                const isExpanded = expandedId === p.id
 
-              return (
-                <div key={p.id} className="bg-white rounded-2xl overflow-hidden"
-                  style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-
-                  {/* Main row */}
-                  <div className="flex items-center gap-4 p-4">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-lg font-bold"
-                      style={{ background: status.bg, color: status.color }}>
-                      {p.profiles?.full_name?.[0]?.toUpperCase() ?? 'P'}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-sm" style={{ color: '#0A4C3E' }}>
-                          {p.profiles?.full_name ?? 'Petani'}
-                        </p>
-                        <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: status.bg, color: status.color }}>
-                          <StatusIcon size={11} />
-                          {status.label}
-                        </span>
+                return (
+                  <div key={p.id} className="overflow-hidden rounded-[28px] border border-[#0A4C3E]/10 bg-white shadow-[0_14px_45px_rgba(10,76,62,0.05)]">
+                    <div className="grid gap-4 p-4 lg:grid-cols-[1fr_auto] lg:items-center lg:p-5">
+                      <div className="flex min-w-0 gap-4">
+                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-extrabold ${status.card}`}>
+                          {p.profiles?.full_name?.[0]?.toUpperCase() ?? 'P'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-base font-extrabold text-[#0A4C3E]">{p.profiles?.full_name ?? 'Petani'}</p>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold ring-1 ${status.badge}`}>
+                              <StatusIcon size={12} />
+                              {status.label}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-[#6B7C6A]">
+                            <span className="inline-flex items-center gap-1"><Building2 size={13} /> {p.farm_name}</span>
+                            <span className="inline-flex items-center gap-1"><MapPin size={13} /> {p.farm_location}</span>
+                            {p.profiles?.phone && <span className="inline-flex items-center gap-1"><Phone size={13} /> {p.profiles.phone}</span>}
+                          </div>
+                          {p.reject_reason && (
+                            <div className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-700">
+                              Alasan penolakan: {p.reject_reason}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <span className="flex items-center gap-1 text-xs" style={{ color: '#6B7C6A' }}>
-                          <Building2 size={11} /> {p.farm_name}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs" style={{ color: '#6B7C6A' }}>
-                          <MapPin size={11} /> {p.farm_location}
-                        </span>
-                        {p.profiles?.phone && (
-                          <span className="flex items-center gap-1 text-xs" style={{ color: '#6B7C6A' }}>
-                            <Phone size={11} /> {p.profiles.phone}
-                          </span>
+
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        {p.verify_status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(p.id, p.user_id)}
+                              disabled={loading === p.id}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0A4C3E] px-4 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none"
+                            >
+                              <CheckCircle size={16} />
+                              {loading === p.id ? 'Memproses...' : 'Setujui'}
+                            </button>
+                            <button
+                              onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
+                              disabled={loading === p.id}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-100 sm:flex-none"
+                            >
+                              <XCircle size={16} />
+                              Tolak
+                            </button>
+                          </>
                         )}
-                      </div>
-                      {p.reject_reason && (
-                        <p className="text-xs mt-1 px-2 py-1 rounded-lg" style={{ background: '#F8D7DA', color: '#721c24' }}>
-                          Alasan: {p.reject_reason}
-                        </p>
-                      )}
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {p.verify_status === 'pending' && (
-                        <>
+                        {p.verify_status === 'approved' && (
+                          <button
+                            onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 transition hover:-translate-y-0.5 sm:flex-none"
+                          >
+                            <XCircle size={16} />
+                            Cabut
+                          </button>
+                        )}
+
+                        {p.verify_status === 'rejected' && (
                           <button
                             onClick={() => handleApprove(p.id, p.user_id)}
                             disabled={loading === p.id}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition hover:opacity-90"
-                            style={{ background: '#0A4C3E', color: '#71BC68' }}>
-                            <CheckCircle size={14} />
-                            {loading === p.id ? '...' : 'Setujui'}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-100 sm:flex-none"
+                          >
+                            <CheckCircle size={16} />
+                            Setujui
                           </button>
-                          <button
-                            onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
-                            disabled={loading === p.id}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition hover:opacity-90"
-                            style={{ background: '#F8D7DA', color: '#721c24' }}>
-                            <XCircle size={14} />
-                            Tolak
-                          </button>
-                        </>
-                      )}
-                      {p.verify_status === 'approved' && (
-                        <button
-                          onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition hover:opacity-80"
-                          style={{ background: '#F8D7DA', color: '#721c24' }}>
-                          <XCircle size={12} /> Cabut
-                        </button>
-                      )}
-                      {p.verify_status === 'rejected' && (
-                        <button
-                          onClick={() => handleApprove(p.id, p.user_id)}
-                          disabled={loading === p.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition hover:opacity-80"
-                          style={{ background: '#D4EDDA', color: '#155724' }}>
-                          <CheckCircle size={12} /> Setujui
-                        </button>
-                      )}
+                        )}
 
-                      {/* Expand toggle */}
-                      <button onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center transition hover:bg-gray-100">
-                        <ChevronDown size={16} color="#6B7C6A"
-                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-0 border-t" style={{ borderColor: 'rgba(113,188,104,0.1)' }}>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                        <div className="p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
-                          <p className="text-xs font-medium mb-1" style={{ color: '#6B7C6A' }}>Luas Lahan</p>
-                          <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>{p.farm_size ?? '-'}</p>
-                        </div>
-                        <div className="p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
-                          <p className="text-xs font-medium mb-1" style={{ color: '#6B7C6A' }}>Tanggal Daftar</p>
-                          <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>
-                            {new Date(p.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
-                          <p className="text-xs font-medium mb-1" style={{ color: '#6B7C6A' }}>KTP</p>
-                          {p.ktp_url ? (
-                            <a href={p.ktp_url} target="_blank" rel="noopener noreferrer"
-                              className="text-sm font-semibold flex items-center gap-1" style={{ color: '#71BC68' }}>
-                              <FileText size={13} /> Lihat KTP
-                            </a>
-                          ) : (
-                            <p className="text-sm font-semibold" style={{ color: '#6B7C6A' }}>Belum upload</p>
-                          )}
-                        </div>
-                        <div className="p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
-                          <p className="text-xs font-medium mb-1" style={{ color: '#6B7C6A' }}>Sertifikat Lahan</p>
-                          {p.cert_url ? (
-                            <a href={p.cert_url} target="_blank" rel="noopener noreferrer"
-                              className="text-sm font-semibold flex items-center gap-1" style={{ color: '#71BC68' }}>
-                              <FileText size={13} /> Lihat Sertifikat
-                            </a>
-                          ) : (
-                            <p className="text-sm font-semibold" style={{ color: '#6B7C6A' }}>Belum upload</p>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4FAF3] text-[#6B7C6A] transition hover:bg-[#EAF7E7]"
+                          aria-label="Buka detail"
+                        >
+                          <ChevronDown size={18} className="transition" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                        </button>
                       </div>
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
+
+                    {isExpanded && (
+                      <div className="border-t border-[#0A4C3E]/8 bg-[#FBFEFA] px-4 pb-5 pt-4 lg:px-5">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                          <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Luas Lahan</p>
+                            <p className="mt-2 text-sm font-extrabold text-[#0A4C3E]">{p.farm_size ?? '-'}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Tanggal Daftar</p>
+                            <p className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
+                              {new Date(p.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">KTP</p>
+                            {p.ktp_url ? (
+                              <a href={p.ktp_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]">
+                                <FileText size={15} /> Lihat KTP
+                              </a>
+                            ) : <p className="mt-2 text-sm font-extrabold text-[#6B7C6A]">Belum upload</p>}
+                          </div>
+                          <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Sertifikat</p>
+                            {p.cert_url ? (
+                              <a href={p.cert_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]">
+                                <FileText size={15} /> Lihat Sertifikat
+                              </a>
+                            ) : <p className="mt-2 text-sm font-extrabold text-[#6B7C6A]">Belum upload</p>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )

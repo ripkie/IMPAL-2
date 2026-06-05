@@ -91,14 +91,14 @@ export default function AdminLoginPage() {
 
           <p className="mt-5 max-w-lg text-base font-medium leading-8 text-[#49645B]">
             Panel khusus administrator untuk memantau aktivitas platform,
-            verifikasi petani, produk, dan transaksi marketplace KiTani.
+            verifikasi petani dan validasi kelayakan akun petani KiTani.
           </p>
 
           <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
             {[
               ['Verifikasi', 'Petani'],
-              ['Pantau', 'Produk'],
-              ['Kelola', 'Transaksi'],
+              ['Validasi', 'Dokumen'],
+              ['Jaga', 'Kepercayaan'],
             ].map(([title, desc]) => (
               <div
                 key={title}

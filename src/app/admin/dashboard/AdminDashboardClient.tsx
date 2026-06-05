@@ -2,8 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import {
-  Users, ShoppingBag, ClipboardList, CheckCircle,
-  AlertTriangle, ArrowRight, UserCheck, Package
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle,
+  Clock,
+  UserCheck,
+  Users,
+  XCircle,
 } from 'lucide-react'
 
 interface PetaniPending {
@@ -15,236 +20,181 @@ interface PetaniPending {
   profiles: { id: string; full_name: string; phone: string } | null
 }
 
-interface Order {
-  id: string
-  order_number: string
-  status: string
-  total_amount: number
-  created_at: string
-  payment_status: string
-}
-
 interface Props {
-  totalPembeli: number
   totalPetani: number
-  totalProduk: number
-  totalOrder: number
   pendingVerifikasi: number
+  approvedVerifikasi: number
+  rejectedVerifikasi: number
   petaniPending: PetaniPending[]
-  orderTerbaru: Order[]
 }
 
-const ORDER_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Pending', color: '#856404', bg: '#FFF3CD' },
-  paid: { label: 'Dibayar', color: '#155724', bg: '#D4EDDA' },
-  processing: { label: 'Diproses', color: '#004085', bg: '#CCE5FF' },
-  shipped: { label: 'Dikirim', color: '#0A4C3E', bg: '#D4EDDA' },
-  done: { label: 'Selesai', color: '#155724', bg: '#D4EDDA' },
-  cancelled: { label: 'Dibatal', color: '#721c24', bg: '#F8D7DA' },
+function formatDate(value: string) {
+  if (!value) return '-'
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value))
 }
 
 export default function AdminDashboardClient({
-  totalPembeli, totalPetani, totalProduk, totalOrder,
-  pendingVerifikasi, petaniPending, orderTerbaru
+  totalPetani,
+  pendingVerifikasi,
+  approvedVerifikasi,
+  rejectedVerifikasi,
+  petaniPending,
 }: Props) {
   const router = useRouter()
 
   const stats = [
-    { icon: Users, label: 'Total Pembeli', value: totalPembeli, color: '#CCE5FF', iconColor: '#004085' },
-    { icon: UserCheck, label: 'Total Petani', value: totalPetani, color: '#D4EDDA', iconColor: '#155724' },
-    { icon: ShoppingBag, label: 'Produk Aktif', value: totalProduk, color: '#FFF3CD', iconColor: '#856404' },
-    { icon: ClipboardList, label: 'Total Order', value: totalOrder, color: '#F8D7DA', iconColor: '#721c24' },
+    {
+      icon: Users,
+      label: 'Total Petani',
+      value: totalPetani,
+      tone: 'bg-blue-50 text-blue-700',
+    },
+    {
+      icon: Clock,
+      label: 'Menunggu Review',
+      value: pendingVerifikasi,
+      tone: 'bg-amber-50 text-amber-700',
+    },
+    {
+      icon: UserCheck,
+      label: 'Terverifikasi',
+      value: approvedVerifikasi,
+      tone: 'bg-emerald-50 text-emerald-700',
+    },
+    {
+      icon: XCircle,
+      label: 'Ditolak',
+      value: rejectedVerifikasi,
+      tone: 'bg-red-50 text-red-700',
+    },
   ]
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+    <div className="min-h-screen bg-[#F5FAF4] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-7xl">
+        <section className="rounded-[30px] border border-[#0A4C3E]/10 bg-white p-5 shadow-[0_18px_60px_rgba(10,76,62,0.06)] sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-['Sora'] text-2xl font-extrabold tracking-[-0.5px] text-[#0A4C3E] sm:text-3xl">
+                Dashboard Verifikasi Petani
+              </h1>
+            </div>
 
-        {/* Page title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-            Dashboard
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: '#6B7C6A' }}>
-            Selamat datang di panel admin KiTani
-          </p>
-        </div>
+            <button
+              onClick={() => router.push('/admin/verifikasi')}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A4C3E] px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5"
+            >
+              Review Pengajuan
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </section>
 
-        {/* Alert Pending */}
         {pendingVerifikasi > 0 && (
-          <div className="mb-5 p-4 rounded-2xl flex items-center justify-between gap-3"
-            style={{ background: '#FFF3CD', border: '1.5px solid #FFEAA7' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FFD700' }}>
-                <AlertTriangle size={20} color="#856404" />
+          <div className="mt-5 flex flex-col gap-3 rounded-[26px] border border-amber-200 bg-amber-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <AlertTriangle size={21} />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ color: '#856404' }}>
-                  {pendingVerifikasi} Petani Menunggu Verifikasi
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: '#856404', opacity: 0.8 }}>
-                  Segera review dan verifikasi akun petani
+                <p className="text-sm font-extrabold text-amber-800">
+                  {pendingVerifikasi} petani menunggu verifikasi
                 </p>
               </div>
             </div>
-            <button onClick={() => router.push('/admin/verifikasi')}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition hover:opacity-90 shrink-0"
-              style={{ background: '#856404', color: 'white' }}>
-              Review <ArrowRight size={13} />
+
+            <button
+              onClick={() => router.push('/admin/verifikasi')}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-700 px-4 py-3 text-xs font-extrabold text-white transition hover:-translate-y-0.5"
+            >
+              Review Sekarang
+              <ArrowRight size={15} />
             </button>
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {stats.map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl p-4"
-              style={{ border: '1px solid rgba(113,188,104,0.15)', boxShadow: '0 2px 8px rgba(10,76,62,0.06)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: stat.color }}>
-                <stat.icon size={18} color={stat.iconColor} />
+        <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-[26px] border border-[#0A4C3E]/10 bg-white p-5 shadow-[0_18px_60px_rgba(10,76,62,0.06)]"
+            >
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${stat.tone}`}>
+                <stat.icon size={22} />
               </div>
-              <p className="text-2xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
+
+              <p className="font-['Sora'] text-2xl font-extrabold text-[#0A4C3E] sm:text-3xl">
                 {stat.value.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: '#6B7C6A' }}>{stat.label}</p>
+
+              <p className="mt-1 text-sm font-extrabold text-[#0A4C3E]">
+                {stat.label}
+              </p>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* Quick Actions */}
-        <div className="mb-6">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-            Kelola Platform
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { icon: UserCheck, label: 'Verifikasi Petani', desc: `${pendingVerifikasi} pending`, action: '/admin/verifikasi', dark: true, badge: pendingVerifikasi },
-              { icon: Users, label: 'Semua Pengguna', desc: `${totalPembeli + totalPetani} total`, action: '/admin/pengguna', dark: false },
-              { icon: ShoppingBag, label: 'Kelola Produk', desc: `${totalProduk} aktif`, action: '/admin/produk', dark: false },
-              { icon: ClipboardList, label: 'Semua Order', desc: `${totalOrder} order`, action: '/admin/orders', dark: false },
-            ].map(item => (
-              <button key={item.label}
-                onClick={() => router.push(item.action)}
-                className="relative flex flex-col items-start gap-3 p-4 rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md text-left"
-                style={{
-                  background: item.dark ? '#0A4C3E' : 'white',
-                  border: '1px solid rgba(113,188,104,0.15)'
-                }}>
-                {item.badge && item.badge > 0 ? (
-                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full text-white flex items-center justify-center"
-                    style={{ background: '#dc3545', fontSize: '10px', fontWeight: 700 }}>
-                    {item.badge > 9 ? '9+' : item.badge}
+        <section className="mt-5 rounded-[30px] border border-[#0A4C3E]/10 bg-white p-5 shadow-[0_18px_60px_rgba(10,76,62,0.06)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-['Sora'] text-lg font-extrabold text-[#0A4C3E]">
+              Antrian Verifikasi Petani
+            </p>
+
+            <button
+              onClick={() => router.push('/admin/verifikasi')}
+              className="inline-flex items-center justify-center gap-1 rounded-2xl bg-[#F0F8EE] px-4 py-3 text-xs font-extrabold text-[#0A4C3E] transition hover:-translate-y-0.5"
+            >
+              Lihat Semua
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          {petaniPending.length === 0 ? (
+            <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[24px] bg-[#F8FCF7] text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <CheckCircle size={30} />
+              </div>
+              <p className="mt-4 text-sm font-extrabold text-[#0A4C3E]">
+                Tidak ada antrian verifikasi
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {petaniPending.map((petani) => (
+                <button
+                  key={petani.id}
+                  onClick={() => router.push('/admin/verifikasi')}
+                  className="flex w-full items-center gap-3 rounded-[22px] border border-[#0A4C3E]/8 bg-[#FBFEFA] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#71BC68]/40"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F0F8EE] text-sm font-extrabold text-[#0A4C3E]">
+                    {petani.profiles?.full_name?.[0]?.toUpperCase() ?? 'P'}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-extrabold text-[#0A4C3E]">
+                      {petani.profiles?.full_name ?? 'Petani'}
+                    </p>
+                    <p className="mt-1 truncate text-xs font-medium text-[#6B7C6A]">
+                      {petani.farm_name} · {petani.farm_location}
+                    </p>
+                    <p className="mt-1 text-[11px] font-bold text-[#8A9A89]">
+                      {formatDate(petani.created_at)}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700 ring-1 ring-amber-200">
+                    Pending
                   </span>
-                ) : null}
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ background: item.dark ? 'rgba(113,188,104,0.2)' : '#F4FAF3' }}>
-                  <item.icon size={18} color={item.dark ? '#71BC68' : '#0A4C3E'} />
-                </div>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: item.dark ? 'white' : '#0A4C3E' }}>
-                    {item.label}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: item.dark ? 'rgba(255,255,255,0.6)' : '#6B7C6A' }}>
-                    {item.desc}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2 COLUMN */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pb-10">
-
-          {/* Petani Pending */}
-          <div className="bg-white rounded-2xl p-5" style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-                <UserCheck size={15} color="#71BC68" /> Antrian Verifikasi
-              </h3>
-              <button onClick={() => router.push('/admin/verifikasi')}
-                className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-                Lihat semua <ArrowRight size={12} />
-              </button>
+                </button>
+              ))}
             </div>
-            {petaniPending.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle size={32} color="#71BC68" className="mx-auto mb-2" />
-                <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Semua sudah diverifikasi!</p>
-                <p className="text-xs mt-1" style={{ color: '#6B7C6A' }}>Tidak ada antrian verifikasi</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {petaniPending.map(petani => (
-                  <div key={petani.id}
-                    onClick={() => router.push('/admin/verifikasi')}
-                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition hover:bg-[#F4FAF3]"
-                    style={{ border: '1px solid rgba(113,188,104,0.1)' }}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
-                      style={{ background: '#D4EDDA', color: '#155724' }}>
-                      {petani.profiles?.full_name?.[0]?.toUpperCase() ?? 'P'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#0A4C3E' }}>
-                        {petani.profiles?.full_name ?? 'Petani'}
-                      </p>
-                      <p className="text-xs truncate" style={{ color: '#6B7C6A' }}>
-                        {petani.farm_name} · {petani.farm_location}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
-                      style={{ background: '#FFF3CD', color: '#856404' }}>Pending</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Order Terbaru */}
-          <div className="bg-white rounded-2xl p-5" style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
-                <Package size={15} color="#71BC68" /> Order Terbaru
-              </h3>
-              <button onClick={() => router.push('/admin/orders')}
-                className="text-xs font-medium flex items-center gap-1" style={{ color: '#71BC68' }}>
-                Lihat semua <ArrowRight size={12} />
-              </button>
-            </div>
-            {orderTerbaru.length === 0 ? (
-              <div className="text-center py-8">
-                <Package size={32} color="#ccc" className="mx-auto mb-2" />
-                <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Belum ada order</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {orderTerbaru.map(order => (
-                  <div key={order.id}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ border: '1px solid rgba(113,188,104,0.1)' }}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: '#F4FAF3' }}>
-                      <ClipboardList size={15} color="#71BC68" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>#{order.order_number}</p>
-                      <p className="text-xs" style={{ color: '#6B7C6A' }}>
-                        Rp {order.total_amount.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold px-2 py-1 rounded-full shrink-0"
-                      style={{
-                        background: ORDER_STATUS[order.status]?.bg ?? '#f0f0f0',
-                        color: ORDER_STATUS[order.status]?.color ?? '#666'
-                      }}>
-                      {ORDER_STATUS[order.status]?.label ?? order.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+          )}
+        </section>
       </div>
     </div>
   )
