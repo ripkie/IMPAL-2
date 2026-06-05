@@ -19,6 +19,7 @@ export default function PetaniNavbar() {
   const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -28,6 +29,29 @@ export default function PetaniNavbar() {
   }, [])
 
   useEffect(() => setOpen(false), [pathname])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadNotificationCount() {
+      try {
+        const res = await fetch('/api/petani/notifications/count', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!ignore) setNotificationCount(Number(data.count ?? 0))
+      } catch (error) {
+        if (!ignore) setNotificationCount(0)
+      }
+    }
+
+    loadNotificationCount()
+    const interval = window.setInterval(loadNotificationCount, 30000)
+
+    return () => {
+      ignore = true
+      window.clearInterval(interval)
+    }
+  }, [pathname])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -79,7 +103,14 @@ export default function PetaniNavbar() {
                     color: active ? '#71BC68' : scrolled ? '#49645B' : 'rgba(255,255,255,0.72)',
                   }}
                 >
-                  <link.icon size={16} />
+                  <span className="relative inline-flex">
+                    <link.icon size={16} />
+                    {link.href === '/petani/notifikasi' && notificationCount > 0 && (
+                      <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+                        {notificationCount > 9 ? '9+' : notificationCount}
+                      </span>
+                    )}
+                  </span>
                   {link.label}
                 </Link>
               )
@@ -118,8 +149,18 @@ export default function PetaniNavbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold"
                   style={{ background: active ? '#F0F8EE' : 'transparent', color: active ? '#0A4C3E' : '#49645B' }}
                 >
-                  <link.icon size={18} />
-                  {link.label}
+                  <span className="relative inline-flex">
+                    <link.icon size={18} />
+                    {link.href === '/petani/notifikasi' && notificationCount > 0 && (
+                      <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+                        {notificationCount > 9 ? '9+' : notificationCount}
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex-1">{link.label}</span>
+                  {link.href === '/petani/notifikasi' && notificationCount > 0 && (
+                    <span className="rounded-full bg-[#EF4444] px-2 py-0.5 text-[10px] font-black text-white">{notificationCount}</span>
+                  )}
                 </Link>
               )
             })}
@@ -137,7 +178,14 @@ export default function PetaniNavbar() {
             const active = pathname.startsWith(link.href)
             return (
               <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 rounded-2xl px-0.5 py-2" style={{ background: active ? '#F0F8EE' : 'transparent' }}>
-                <link.icon size={19} color={active ? '#0A4C3E' : '#9CA3AF'} strokeWidth={active ? 2.7 : 2} />
+                <span className="relative inline-flex">
+                  <link.icon size={19} color={active ? '#0A4C3E' : '#9CA3AF'} strokeWidth={active ? 2.7 : 2} />
+                  {link.href === '/petani/notifikasi' && notificationCount > 0 && (
+                    <span className="absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[9px] font-bold sm:text-[10px]" style={{ color: active ? '#0A4C3E' : '#9CA3AF' }}>{link.label}</span>
               </Link>
             )
