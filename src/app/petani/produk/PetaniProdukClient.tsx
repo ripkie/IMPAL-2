@@ -187,10 +187,10 @@ export default function PetaniProdukClient({ products: initialProducts, categori
   }
 
   return (
-    <main className="min-h-screen bg-[#F4FAF3] px-4 pb-28 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="mx-auto max-w-6xl">
-        <section className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <main className="min-h-screen overflow-x-hidden bg-[#F4FAF3] px-3 pb-28 sm:px-4 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mx-auto w-full max-w-6xl">
+        <section className="rounded-[26px] bg-white p-4 shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] text-[#71BC68]">Manajemen Produk</p>
               <h1 className="mt-2 text-2xl font-black text-[#0A4C3E] md:text-3xl" style={{ fontFamily: 'Sora, sans-serif' }}>Etalase Produk Tani</h1>
@@ -201,7 +201,7 @@ export default function PetaniProdukClient({ products: initialProducts, categori
             </button>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-3 grid-cols-2 lg:grid-cols-4">
             {[
               ['Produk Aktif', stats.active], ['Total Stok', stats.totalStock], ['Produk Terjual', stats.totalSold], ['Stok Habis', stats.empty],
             ].map(([label, value]) => (
@@ -213,7 +213,7 @@ export default function PetaniProdukClient({ products: initialProducts, categori
           </div>
         </section>
 
-        <div className="mt-5 flex flex-col gap-3 rounded-[28px] bg-white p-3 shadow-sm ring-1 ring-[#71BC68]/15 md:flex-row md:items-center">
+        <div className="mt-5 flex flex-col gap-3 rounded-[24px] sm:rounded-[28px] bg-white p-3 shadow-sm ring-1 ring-[#71BC68]/15 lg:flex-row lg:items-center">
           <div className="flex flex-1 items-center gap-2 rounded-2xl bg-[#F8FBF7] px-4 py-3">
             <Search size={18} color="#8AA08A" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari produk atau kategori..." className="w-full bg-transparent text-sm font-medium text-[#0A4C3E] outline-none placeholder:text-[#9CA3AF]" />
@@ -228,40 +228,40 @@ export default function PetaniProdukClient({ products: initialProducts, categori
         </div>
 
         {filteredProducts.length === 0 ? (
-          <div className="mt-5 rounded-[32px] bg-white py-20 text-center shadow-sm ring-1 ring-[#71BC68]/15">
+          <div className="mt-5 rounded-[26px] bg-white px-4 py-14 text-center shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:py-20">
             <Package className="mx-auto mb-3" size={42} color="#9CA3AF" />
             <p className="font-black text-[#0A4C3E]">Produk belum ditemukan</p>
             <p className="mt-1 text-sm text-[#6B7C6A]">Tambah produk atau ubah kata pencarian.</p>
           </div>
         ) : (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
             {filteredProducts.map(product => (
-              <article key={product.id} className="overflow-hidden rounded-[30px] bg-white shadow-sm ring-1 ring-[#71BC68]/15 transition hover:-translate-y-1 hover:shadow-xl">
-                <div className="relative aspect-[4/3] bg-[#F8FBF7]">
-                  {product.image_urls?.[0] ? <img src={product.image_urls[0]} alt={product.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><ImageIcon size={42} color="#9CA3AF" /></div>}
-                  <span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black" style={{ background: product.is_active ? '#E7F8EE' : '#F1F5F9', color: product.is_active ? '#0A4C3E' : '#64748B' }}>{product.is_active ? 'Aktif' : 'Nonaktif'}</span>
-                  {product.stock <= 5 && <span className="absolute right-3 top-3 rounded-full bg-[#FFF5D6] px-3 py-1 text-xs font-black text-[#8A5B00]">Stok {product.stock}</span>}
+              <article key={product.id} className="grid grid-cols-[104px_1fr] overflow-hidden rounded-[22px] bg-white shadow-sm ring-1 ring-[#71BC68]/15 transition hover:-translate-y-1 hover:shadow-xl sm:block sm:rounded-[26px]">
+                <div className="relative h-full min-h-[160px] bg-white sm:h-44 sm:min-h-0 md:h-48 xl:h-52">
+                  {product.image_urls?.[0] ? <img src={product.image_urls[0]} alt={product.name} className="h-full w-full object-contain p-2 sm:p-3" /> : <div className="flex h-full items-center justify-center"><ImageIcon size={42} color="#9CA3AF" /></div>}
+                  <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full px-3 py-1 text-xs font-black" style={{ background: product.is_active ? '#E7F8EE' : '#F1F5F9', color: product.is_active ? '#0A4C3E' : '#64748B' }}>{product.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                  {product.stock <= 5 && <span className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-[#FFF5D6] px-3 py-1 text-xs font-black text-[#8A5B00]">Stok {product.stock}</span>}
                 </div>
-                <div className="p-4">
-                  <p className="line-clamp-1 text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{product.name}</p>
+                <div className="p-3 sm:p-4">
+                  <p className="line-clamp-2 text-sm font-black text-[#0A4C3E] sm:text-base" style={{ fontFamily: 'Sora, sans-serif' }}>{product.name}</p>
                   <p className="mt-1 text-xs font-bold text-[#8AA08A]">{product.categories?.name ?? 'Tanpa kategori'}</p>
-                  <div className="mt-4">
-                    <p className="text-xs font-bold text-[#6B7C6A]">Harga</p>
-                    <p className="text-lg font-black text-[#0A4C3E]">{formatRp(product.price)}<span className="text-xs font-bold text-[#6B7C6A]">/{product.unit}</span></p>
+                  <div className="mt-2 sm:mt-3">
+                    <p className="text-[11px] font-bold text-[#6B7C6A]">Harga</p>
+                    <p className="text-base font-black text-[#0A4C3E] sm:text-lg">{formatRp(product.price)}<span className="text-xs font-bold text-[#6B7C6A]">/{product.unit}</span></p>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl bg-[#F8FBF7] px-3 py-3 ring-1 ring-[#71BC68]/15">
-                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#8AA08A]">Sisa Stok</p>
-                      <p className="mt-1 text-xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{product.stock ?? 0}<span className="ml-1 text-xs font-bold text-[#6B7C6A]">{product.unit}</span></p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3">
+                    <div className="rounded-xl bg-[#F8FBF7] px-2 py-2 sm:rounded-2xl sm:px-3 sm:py-3 ring-1 ring-[#71BC68]/15">
+                      <p className="text-[9px] font-black uppercase tracking-[0.08em] sm:text-[11px] sm:tracking-[0.12em] text-[#8AA08A]">Sisa Stok</p>
+                      <p className="mt-0.5 text-base font-black sm:mt-1 sm:text-lg text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{product.stock ?? 0}<span className="ml-1 text-xs font-bold text-[#6B7C6A]">{product.unit}</span></p>
                     </div>
-                    <div className="rounded-2xl bg-[#F0F8EE] px-3 py-3 ring-1 ring-[#71BC68]/15">
-                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#8AA08A]">Terjual</p>
-                      <p className="mt-1 text-xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{product.sold_count ?? 0}<span className="ml-1 text-xs font-bold text-[#6B7C6A]">{product.unit}</span></p>
+                    <div className="rounded-xl bg-[#F0F8EE] px-2 py-2 sm:rounded-2xl sm:px-3 sm:py-3 ring-1 ring-[#71BC68]/15">
+                      <p className="text-[9px] font-black uppercase tracking-[0.08em] sm:text-[11px] sm:tracking-[0.12em] text-[#8AA08A]">Terjual</p>
+                      <p className="mt-0.5 text-base font-black sm:mt-1 sm:text-lg text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{product.sold_count ?? 0}<span className="ml-1 text-xs font-bold text-[#6B7C6A]">{product.unit}</span></p>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="mt-2 grid grid-cols-3 gap-2 sm:mt-3">
                     <button onClick={() => handleToggleActive(product)} className="rounded-2xl bg-[#F0F8EE] px-3 py-2 text-xs font-black text-[#0A4C3E]">{product.is_active ? <EyeOff className="mx-auto" size={16} /> : <Eye className="mx-auto" size={16} />}</button>
                     <button onClick={() => openEdit(product)} className="rounded-2xl bg-[#E7F0FF] px-3 py-2 text-xs font-black text-[#0B4A8B]"><Edit2 className="mx-auto" size={16} /></button>
                     <button onClick={() => setDeleteConfirm(product.id)} className="rounded-2xl bg-[#FFF4F4] px-3 py-2 text-xs font-black text-[#C92A2A]"><Trash2 className="mx-auto" size={16} /></button>
@@ -274,8 +274,8 @@ export default function PetaniProdukClient({ products: initialProducts, categori
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-4 md:items-center" onClick={closeModal}>
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[32px] bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 pb-3 sm:px-4 md:items-center" onClick={closeModal}>
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[28px] sm:rounded-[32px] bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#71BC68]/15 bg-white px-5 py-4">
               <h3 className="text-lg font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>{modal === 'add' ? 'Tambah Produk Baru' : 'Edit Produk'}</h3>
               <button onClick={closeModal} className="rounded-2xl bg-[#F8FBF7] p-2 text-[#6B7C6A]"><X size={18} /></button>
@@ -290,7 +290,7 @@ export default function PetaniProdukClient({ products: initialProducts, categori
                 <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Nama Produk *"><input value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} placeholder="Contoh: Kangkung Segar" className="kitani-input" /></Field>
                 <Field label="Kategori"><select value={form.category_id} onChange={e => setForm(v => ({ ...v, category_id: e.target.value }))} className="kitani-input"><option value="">Pilih kategori</option>{categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></Field>
                 <Field label="Harga (Rp) *"><input type="number" value={form.price} onChange={e => setForm(v => ({ ...v, price: e.target.value }))} placeholder="5000" className="kitani-input" /></Field>

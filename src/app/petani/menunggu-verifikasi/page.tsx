@@ -3,9 +3,9 @@ import { Bell, Clock, FileCheck2, ShieldCheck, Sprout } from 'lucide-react'
 
 export default function MenungguVerifikasiPage() {
   return (
-    <main className="min-h-screen bg-[#F4FAF3] px-4 py-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <main className="min-h-screen overflow-x-hidden bg-[#F4FAF3] px-3 py-6 sm:px-4 sm:py-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-5xl items-center justify-center">
-        <section className="grid w-full overflow-hidden rounded-[36px] bg-white shadow-[0_24px_80px_rgba(10,76,62,0.14)] ring-1 ring-[#71BC68]/15 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="grid w-full overflow-hidden rounded-[28px] sm:rounded-[36px] bg-white shadow-[0_24px_80px_rgba(10,76,62,0.14)] ring-1 ring-[#71BC68]/15 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="relative overflow-hidden bg-[#0A4C3E] p-8 text-white md:p-10">
             <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#71BC68]/15" />
             <div className="relative">
@@ -13,7 +13,7 @@ export default function MenungguVerifikasiPage() {
                 <Sprout size={34} color="#71BC68" />
               </div>
               <p className="mt-8 text-xs font-black uppercase tracking-[0.22em] text-[#B9E8B4]">KiTani Seller Center</p>
-              <h1 className="mt-3 text-3xl font-black leading-tight md:text-4xl" style={{ fontFamily: 'Sora, sans-serif' }}>
+              <h1 className="mt-3 text-2xl font-black sm:text-3xl leading-tight md:text-4xl" style={{ fontFamily: 'Sora, sans-serif' }}>
                 Pendaftaran petani berhasil dikirim.
               </h1>
               <p className="mt-4 text-sm leading-7 text-white/68">

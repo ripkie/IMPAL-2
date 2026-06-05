@@ -69,31 +69,31 @@ export default function PetaniProfilClient({ profile: initialProfile, farmerProf
   const verified = farmerProfile?.verify_status === 'approved'
 
   return (
-    <main className="min-h-screen bg-[#F4FAF3] px-4 pb-28 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <main className="min-h-screen overflow-x-hidden bg-[#F4FAF3] px-3 pb-28 sm:px-4 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <div className="mx-auto max-w-5xl">
-        <section className="relative overflow-hidden rounded-[32px] bg-[#0A4C3E] p-5 shadow-[0_24px_70px_rgba(10,76,62,0.20)] md:p-8">
+        <section className="relative overflow-hidden rounded-[28px] bg-[#0A4C3E] p-4 shadow-[0_24px_70px_rgba(10,76,62,0.20)] sm:p-5 md:p-8">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#71BC68]/15" />
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[28px] bg-[#71BC68] text-2xl font-black text-[#0A4C3E] md:h-24 md:w-24 md:text-3xl" style={{ fontFamily: 'Sora, sans-serif' }}>{initials}</div>
               <div>
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-black text-[#B9E8B4] ring-1 ring-white/10"><Sprout size={14} /> Petani KiTani</div>
-                <h1 className="text-2xl font-black text-white md:text-4xl" style={{ fontFamily: 'Sora, sans-serif' }}>{profile.full_name ?? 'Petani'}</h1>
+                <h1 className="break-words text-2xl font-black text-white sm:text-3xl md:text-4xl" style={{ fontFamily: 'Sora, sans-serif' }}>{profile.full_name ?? 'Petani'}</h1>
                 <p className="mt-2 text-sm text-white/65">Bergabung sejak {joinDate}</p>
               </div>
             </div>
-            <button onClick={() => setEditing(prev => !prev)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#71BC68] px-5 py-3 text-sm font-black text-[#0A4C3E] transition hover:-translate-y-0.5"><Edit2 size={17} /> {editing ? 'Tutup Edit' : 'Edit Profil'}</button>
+            <button onClick={() => setEditing(prev => !prev)} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#71BC68] sm:w-auto px-5 py-3 text-sm font-black text-[#0A4C3E] transition hover:-translate-y-0.5"><Edit2 size={17} /> {editing ? 'Tutup Edit' : 'Edit Profil'}</button>
           </div>
         </section>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.85fr]">
-          <div className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
-            <div className="mb-5 flex items-center justify-between gap-3">
+        <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.85fr]">
+          <div className="rounded-[26px] bg-white p-4 shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:p-5 md:p-6">
+            <div className="mb-5 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#71BC68]">Account Detail</p>
                 <h2 className="mt-2 text-xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Informasi Akun</h2>
               </div>
-              {editing && <div className="flex gap-2"><button onClick={cancelEdit} className="rounded-2xl bg-[#F8FBF7] px-4 py-2 text-xs font-black text-[#6B7C6A]"><X className="inline" size={14} /> Batal</button><button onClick={handleSave} disabled={loading} className="rounded-2xl bg-[#0A4C3E] px-4 py-2 text-xs font-black text-[#71BC68]"><Check className="inline" size={14} /> {loading ? 'Simpan...' : 'Simpan'}</button></div>}
+              {editing && <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto"><button onClick={cancelEdit} className="rounded-2xl bg-[#F8FBF7] px-4 py-2 text-xs font-black text-[#6B7C6A]"><X className="inline" size={14} /> Batal</button><button onClick={handleSave} disabled={loading} className="rounded-2xl bg-[#0A4C3E] px-4 py-2 text-xs font-black text-[#71BC68]"><Check className="inline" size={14} /> {loading ? 'Simpan...' : 'Simpan'}</button></div>}
             </div>
 
             <div className="space-y-4">
@@ -110,8 +110,8 @@ export default function PetaniProfilClient({ profile: initialProfile, farmerProf
           </div>
 
           <aside className="space-y-5">
-            <div className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
-              <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="rounded-[26px] bg-white p-4 shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:p-5 md:p-6">
+              <div className="mb-5 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#71BC68]">Farm Profile</p>
                   <h2 className="mt-2 text-xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Informasi Kebun</h2>
@@ -129,7 +129,7 @@ export default function PetaniProfilClient({ profile: initialProfile, farmerProf
               )}
             </div>
 
-            <div className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
+            <div className="rounded-[26px] bg-white p-4 shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:p-5 md:p-6">
               <h2 className="text-xl font-black text-[#0A4C3E]" style={{ fontFamily: 'Sora, sans-serif' }}>Keamanan Akun</h2>
               <p className="mt-2 text-sm leading-6 text-[#6B7C6A]">Gunakan tombol keluar jika selesai mengelola toko di perangkat umum.</p>
               <button onClick={handleLogout} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFF4F4] px-5 py-3 text-sm font-black text-[#C92A2A]"><LogOut size={18} /> Keluar dari Akun</button>

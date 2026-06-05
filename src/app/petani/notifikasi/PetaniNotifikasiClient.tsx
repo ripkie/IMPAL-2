@@ -59,16 +59,16 @@ export default function PetaniNotifikasiClient({ notifications }: Props) {
   const unreadCount = notifications.filter(item => !item.is_read).length
 
   return (
-    <main className="min-h-screen bg-[#F4FAF3] px-4 pb-28 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="mx-auto max-w-4xl">
-        <section className="rounded-[32px] bg-white p-5 shadow-sm ring-1 ring-[#71BC68]/15 md:p-6">
+    <main className="min-h-screen overflow-x-hidden bg-[#F4FAF3] px-3 pb-28 sm:px-4 md:px-6 md:pb-10" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mx-auto w-full max-w-4xl">
+        <section className="rounded-[26px] bg-white p-4 shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] text-[#71BC68]">Notification Center</p>
               <h1 className="mt-2 text-2xl font-black text-[#0A4C3E] md:text-3xl" style={{ fontFamily: 'Sora, sans-serif' }}>Notifikasi Toko</h1>
               <p className="mt-2 text-sm text-[#6B7C6A]">Pantau update pesanan, pembayaran, dan pengiriman dari pembeli.</p>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:w-72">
+            <div className="grid grid-cols-2 gap-3 sm:w-72">
               <div className="rounded-[24px] bg-[#F8FBF7] p-4"><p className="text-xs font-bold text-[#6B7C6A]">Total</p><p className="mt-2 text-2xl font-black text-[#0A4C3E]">{notifications.length}</p></div>
               <div className="rounded-[24px] bg-[#E7F0FF] p-4"><p className="text-xs font-bold text-[#0B4A8B]">Belum Dibaca</p><p className="mt-2 text-2xl font-black text-[#0B4A8B]">{unreadCount}</p></div>
             </div>
@@ -76,7 +76,7 @@ export default function PetaniNotifikasiClient({ notifications }: Props) {
         </section>
 
         {notifications.length === 0 ? (
-          <div className="mt-5 rounded-[32px] bg-white py-20 text-center shadow-sm ring-1 ring-[#71BC68]/15">
+          <div className="mt-5 rounded-[26px] bg-white px-4 py-14 text-center shadow-sm ring-1 ring-[#71BC68]/15 sm:rounded-[32px] sm:py-20">
             <Bell className="mx-auto mb-3" size={44} color="#9CA3AF" />
             <p className="font-black text-[#0A4C3E]">Belum ada notifikasi</p>
             <p className="mt-1 text-sm text-[#6B7C6A]">Notifikasi pesanan baru akan tampil di sini.</p>
@@ -91,10 +91,10 @@ export default function PetaniNotifikasiClient({ notifications }: Props) {
                     const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.system
                     const Icon = cfg.icon
                     return (
-                      <button key={notif.id} onClick={() => notif.reference_id && router.push('/petani/pesanan')} className="flex w-full gap-4 p-4 text-left transition hover:bg-[#F8FBF7] md:p-5" style={{ borderBottom: index < items.length - 1 ? '1px solid rgba(113,188,104,0.10)' : 'none' }}>
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: cfg.bg, color: cfg.color }}><Icon size={22} /></div>
+                      <button key={notif.id} onClick={() => notif.reference_id && router.push('/petani/pesanan')} className="flex w-full gap-3 p-4 sm:gap-4 text-left transition hover:bg-[#F8FBF7] md:p-5" style={{ borderBottom: index < items.length - 1 ? '1px solid rgba(113,188,104,0.10)' : 'none' }}>
+                        <div className="flex h-10 w-10 shrink-0 sm:h-12 sm:w-12 items-center justify-center rounded-2xl" style={{ background: cfg.bg, color: cfg.color }}><Icon size={22} /></div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
