@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   ShoppingCart, Sprout, ArrowRight, ArrowLeft,
   AlertTriangle, Eye, EyeOff, User, Mail, Phone,
-  Lock, MapPin, Store, Check,
+  Lock, MapPin, Store, Check, FileText, UploadCloud,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -24,13 +24,81 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [farmName, setFarmName] = useState('')
   const [farmLocation, setFarmLocation] = useState('')
+  const [ktpFile, setKtpFile] = useState<File | null>(null)
+  const [certFile, setCertFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  function validateDocument(file: File, label: string) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const maxSize = 5 * 1024 * 1024
+
+    if (!allowedTypes.includes(file.type)) {
+      return `${label} harus berupa JPG, PNG, WEBP, atau PDF.`
+    }
+
+    if (file.size > maxSize) {
+      return `${label} maksimal 5MB.`
+    }
+
+    return ''
+  }
+
+  async function uploadFarmerDocument(userId: string, file: File, folder: 'ktp' | 'sertifikat') {
+    const supabase = createClient()
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'file'
+    const filePath = `${folder}/${userId}-${Date.now()}.${extension}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('farmer-documents')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data } = supabase.storage
+      .from('farmer-documents')
+      .getPublicUrl(filePath)
+
+    return data.publicUrl
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (role === 'petani') {
+      if (!farmName.trim() || !farmLocation.trim()) {
+        setError('Nama kebun dan lokasi pertanian wajib diisi.')
+        setLoading(false)
+        return
+      }
+
+      if (!ktpFile) {
+        setError('Upload KTP wajib untuk verifikasi petani.')
+        setLoading(false)
+        return
+      }
+
+      const ktpError = validateDocument(ktpFile, 'KTP')
+      if (ktpError) {
+        setError(ktpError)
+        setLoading(false)
+        return
+      }
+
+      if (certFile) {
+        const certError = validateDocument(certFile, 'Sertifikat')
+        if (certError) {
+          setError(certError)
+          setLoading(false)
+          return
+        }
+      }
+    }
 
     const supabase = createClient()
     const { data, error: authError } = await supabase.auth.signUp({
@@ -48,12 +116,25 @@ export default function RegisterPage() {
     await supabase.from('profiles').update({ phone }).eq('id', data.user.id)
 
     if (role === 'petani') {
-      await supabase.from('farmer_profiles').insert({
-        user_id: data.user.id,
-        farm_name: farmName,
-        farm_location: farmLocation,
-        verify_status: 'pending'
-      })
+      try {
+        const ktpUrl = ktpFile ? await uploadFarmerDocument(data.user.id, ktpFile, 'ktp') : null
+        const certUrl = certFile ? await uploadFarmerDocument(data.user.id, certFile, 'sertifikat') : null
+
+        const { error: farmerError } = await supabase.from('farmer_profiles').insert({
+          user_id: data.user.id,
+          farm_name: farmName,
+          farm_location: farmLocation,
+          ktp_url: ktpUrl,
+          cert_url: certUrl,
+          verify_status: 'pending'
+        })
+
+        if (farmerError) throw farmerError
+      } catch (uploadOrInsertError: any) {
+        setError(uploadOrInsertError?.message || 'Gagal mengunggah dokumen verifikasi petani.')
+        setLoading(false)
+        return
+      }
     }
 
     if (role === 'petani') router.push('/petani/menunggu-verifikasi')
@@ -332,6 +413,51 @@ export default function RegisterPage() {
                             required placeholder="Contoh: Malang, Jawa Timur"
                             className={`${inputCls} pl-12 pr-5`} />
                         </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-sm font-extrabold text-slate-700">
+                            Upload KTP <span className="text-red-500">*</span>
+                          </label>
+                          <label className="flex min-h-[116px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#71BC68]/60 bg-[#F8FCF7] px-4 py-5 text-center transition hover:border-[#0A4C3E] hover:bg-[#F0F8EE]">
+                            <UploadCloud size={24} className="text-[#0A4C3E]" />
+                            <span className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
+                              {ktpFile ? ktpFile.name : 'Pilih file KTP'}
+                            </span>
+                            <span className="mt-1 text-xs font-medium text-slate-500">JPG, PNG, WEBP, atau PDF · Maks 5MB</span>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
+                              required={role === 'petani'}
+                              onChange={(e) => setKtpFile(e.target.files?.[0] ?? null)}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-extrabold text-slate-700">
+                            Sertifikat <span className="text-xs font-bold text-slate-400">Opsional</span>
+                          </label>
+                          <label className="flex min-h-[116px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-center transition hover:border-[#71BC68] hover:bg-[#F8FCF7]">
+                            <FileText size={24} className="text-[#6B7C6A]" />
+                            <span className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
+                              {certFile ? certFile.name : 'Pilih sertifikat'}
+                            </span>
+                            <span className="mt-1 text-xs font-medium text-slate-500">Boleh dikosongkan jika belum punya</span>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
+                              onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium leading-5 text-amber-800">
+                        KTP digunakan hanya untuk verifikasi admin. Sertifikat bersifat opsional sebagai dokumen pendukung petani.
                       </div>
                     </>
                   )}

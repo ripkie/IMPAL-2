@@ -336,6 +336,30 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        {p.ktp_url && (
+                          <a
+                            href={p.ktp_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-extrabold text-blue-700 transition hover:-translate-y-0.5 sm:flex-none"
+                          >
+                            <FileText size={16} />
+                            Lihat KTP
+                          </a>
+                        )}
+
+                        {p.cert_url && (
+                          <a
+                            href={p.cert_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-700 transition hover:-translate-y-0.5 sm:flex-none"
+                          >
+                            <FileText size={16} />
+                            Lihat Sertifikat
+                          </a>
+                        )}
+
                         {p.verify_status === 'pending' && (
                           <>
                             <button
@@ -346,8 +370,14 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                               <CheckCircle size={16} />
                               {loading === p.id ? 'Memproses...' : 'Setujui'}
                             </button>
+
                             <button
-                              onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
+                              onClick={() =>
+                                setRejectModal({
+                                  id: p.id,
+                                  name: p.profiles?.full_name ?? 'Petani',
+                                })
+                              }
                               disabled={loading === p.id}
                               className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-100 sm:flex-none"
                             >
@@ -359,7 +389,12 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
 
                         {p.verify_status === 'approved' && (
                           <button
-                            onClick={() => setRejectModal({ id: p.id, name: p.profiles?.full_name ?? 'Petani' })}
+                            onClick={() =>
+                              setRejectModal({
+                                id: p.id,
+                                name: p.profiles?.full_name ?? 'Petani',
+                              })
+                            }
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 transition hover:-translate-y-0.5 sm:flex-none"
                           >
                             <XCircle size={16} />
@@ -383,9 +418,16 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4FAF3] text-[#6B7C6A] transition hover:bg-[#EAF7E7]"
                           aria-label="Buka detail"
                         >
-                          <ChevronDown size={18} className="transition" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                          <ChevronDown
+                            size={18}
+                            className="transition"
+                            style={{
+                              transform: isExpanded ? 'rotate(180deg)' : 'none',
+                            }}
+                          />
                         </button>
                       </div>
+
                     </div>
 
                     {isExpanded && (
