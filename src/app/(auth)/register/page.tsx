@@ -44,6 +44,14 @@ export default function RegisterPage() {
     return ''
   }
 
+  function removeKtpFile() {
+    setKtpFile(null)
+  }
+
+  function removeCertFile() {
+    setCertFile(null)
+  }
+
   async function uploadFarmerDocument(userId: string, file: File, folder: 'ktp' | 'sertifikat') {
     const supabase = createClient()
     const extension = file.name.split('.').pop()?.toLowerCase() || 'file'
@@ -175,7 +183,6 @@ export default function RegisterPage() {
               Daftar sebagai pembeli dan nikmati sayuran segar langsung dari petani, atau jadilah petani mitra dan jual hasil panenmu.
             </p>
 
-            {/* Benefit cards per role */}
             <div className="mt-8 grid max-w-[420px] gap-3">
               <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-400">
                 {role === 'petani' ? 'Keuntungan jadi petani mitra' : 'Keuntungan belanja di KiTani'}
@@ -203,7 +210,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Bottom image */}
           <div className="relative mt-8">
             <div className="absolute inset-x-[-130px] bottom-[-44px] h-48 rounded-[55%_55%_0_0] bg-gradient-to-r from-[#71BC68] via-[#9BD982] to-[#71BC68]" />
             <div className="relative z-10 mx-auto flex max-w-[680px] items-end justify-center">
@@ -233,7 +239,6 @@ export default function RegisterPage() {
         <section className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10 xl:px-16">
           <div className="w-full max-w-[520px]">
 
-            {/* Logo mobile */}
             <div className="mb-6 flex justify-center lg:hidden">
               <div className="flex h-[125px] w-[125px] items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image src="/images/logoKitani.png" alt="KiTani" width={125} height={125} priority
@@ -243,7 +248,6 @@ export default function RegisterPage() {
 
             <div className="rounded-[34px] border border-[#0A4C3E]/10 bg-white/92 px-6 py-8 shadow-[0_25px_90px_rgba(10,76,62,0.12)] backdrop-blur sm:px-9 sm:py-10 lg:px-12 lg:py-12">
 
-              {/* Step indicator */}
               <div className="mb-7 flex items-center gap-2">
                 {([1, 2] as const).map(s => (
                   <div key={s} className="flex items-center gap-2">
@@ -266,7 +270,6 @@ export default function RegisterPage() {
                 ))}
               </div>
 
-              {/* Heading */}
               <div className="mb-7">
                 <p className="text-sm font-extrabold text-[#71BC68]">
                   {step === 1 ? 'Langkah 1 dari 2' : 'Langkah 2 dari 2'}
@@ -281,14 +284,12 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              {/* Error */}
               {error && (
                 <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
                   {error}
                 </div>
               )}
 
-              {/* ── STEP 1 ── */}
               {step === 1 && (
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -334,11 +335,9 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* ── STEP 2 ── */}
               {step === 2 && (
                 <form onSubmit={handleRegister} className="flex flex-col gap-5">
 
-                  {/* Nama */}
                   <div>
                     <label className="mb-2 block text-sm font-extrabold text-slate-700">Nama Lengkap</label>
                     <div className="relative">
@@ -349,7 +348,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Email */}
                   <div>
                     <label className="mb-2 block text-sm font-extrabold text-slate-700">Email</label>
                     <div className="relative">
@@ -360,7 +358,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* No. HP */}
                   <div>
                     <label className="mb-2 block text-sm font-extrabold text-slate-700">No. HP</label>
                     <div className="relative">
@@ -371,7 +368,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Password */}
                   <div>
                     <label className="mb-2 block text-sm font-extrabold text-slate-700">Password</label>
                     <div className="relative">
@@ -386,7 +382,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Extra fields for petani */}
                   {role === 'petani' && (
                     <>
                       <div className="flex items-center gap-3 border-t border-slate-100 pt-2">
@@ -422,7 +417,7 @@ export default function RegisterPage() {
                           </label>
                           <label className="flex min-h-[116px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#71BC68]/60 bg-[#F8FCF7] px-4 py-5 text-center transition hover:border-[#0A4C3E] hover:bg-[#F0F8EE]">
                             <UploadCloud size={24} className="text-[#0A4C3E]" />
-                            <span className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
+                            <span className="mt-2 max-w-full truncate text-sm font-extrabold text-[#0A4C3E]">
                               {ktpFile ? ktpFile.name : 'Pilih file KTP'}
                             </span>
                             <span className="mt-1 text-xs font-medium text-slate-500">JPG, PNG, WEBP, atau PDF · Maks 5MB</span>
@@ -434,6 +429,22 @@ export default function RegisterPage() {
                               className="hidden"
                             />
                           </label>
+
+                          {!ktpFile && role === 'petani' && (
+                            <p className="mt-2 text-xs font-bold text-red-500">
+                              KTP wajib diunggah untuk proses verifikasi petani.
+                            </p>
+                          )}
+
+                          {ktpFile && (
+                            <button
+                              type="button"
+                              onClick={removeKtpFile}
+                              className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600 transition hover:bg-red-100"
+                            >
+                              Hapus KTP
+                            </button>
+                          )}
                         </div>
 
                         <div>
@@ -442,7 +453,7 @@ export default function RegisterPage() {
                           </label>
                           <label className="flex min-h-[116px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-center transition hover:border-[#71BC68] hover:bg-[#F8FCF7]">
                             <FileText size={24} className="text-[#6B7C6A]" />
-                            <span className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
+                            <span className="mt-2 max-w-full truncate text-sm font-extrabold text-[#0A4C3E]">
                               {certFile ? certFile.name : 'Pilih sertifikat'}
                             </span>
                             <span className="mt-1 text-xs font-medium text-slate-500">Boleh dikosongkan jika belum punya</span>
@@ -453,22 +464,33 @@ export default function RegisterPage() {
                               className="hidden"
                             />
                           </label>
+
+                          {certFile && (
+                            <button
+                              type="button"
+                              onClick={removeCertFile}
+                              className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600 transition hover:bg-red-100"
+                            >
+                              Hapus Sertifikat
+                            </button>
+                          )}
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium leading-5 text-amber-800">
-                        KTP digunakan hanya untuk verifikasi admin. Sertifikat bersifat opsional sebagai dokumen pendukung petani.
+                        KTP wajib diunggah untuk proses verifikasi admin. Sertifikat bersifat opsional sebagai dokumen pendukung petani.
                       </div>
                     </>
                   )}
 
-                  {/* Actions */}
                   <div className="flex gap-3 pt-1">
                     <button type="button" onClick={() => setStep(1)}
                       className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]">
                       <ArrowLeft size={15} /> Kembali
                     </button>
-                    <button type="submit" disabled={loading}
+                    <button
+                      type="submit"
+                      disabled={loading || (role === 'petani' && !ktpFile)}
                       className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A4C3E] to-[#0C6A52] text-sm font-extrabold text-white shadow-[0_15px_35px_rgba(10,76,62,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(10,76,62,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-400">
                       {loading ? 'Memproses...' : 'Daftar Sekarang'}
                     </button>
