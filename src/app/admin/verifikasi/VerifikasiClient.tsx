@@ -1,19 +1,20 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Building2,
   CheckCircle,
   ChevronDown,
   Clock,
+  Eye,
   FileText,
+  Mail,
   MapPin,
   Phone,
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  UserCheck,
+  X,
   XCircle,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -30,7 +31,7 @@ interface Petani {
   reject_reason: string | null
   created_at: string
   verified_at: string | null
-  profiles: { id: string; full_name: string; phone: string } | null
+  profiles: { id: string; full_name: string; phone: string; email: string | null } | null
 }
 
 interface Props {
@@ -60,7 +61,6 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: any; c
 }
 
 export default function VerifikasiClient({ petani, adminId }: Props) {
-  const router = useRouter()
   const [list, setList] = useState(petani)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
   const [search, setSearch] = useState('')
@@ -68,11 +68,16 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
   const [rejectModal, setRejectModal] = useState<{ id: string; name: string } | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [preview, setPreview] = useState<{ title: string; url: string } | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
+  }
+
+  function isPdf(url: string) {
+    return url.toLowerCase().split('?')[0].endsWith('.pdf')
   }
 
   const counts = useMemo(() => ({
@@ -88,15 +93,26 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       const keyword = search.toLowerCase().trim()
       const matchSearch = !keyword ||
         p.profiles?.full_name?.toLowerCase().includes(keyword) ||
+        p.profiles?.email?.toLowerCase().includes(keyword) ||
         p.farm_name?.toLowerCase().includes(keyword) ||
         p.farm_location?.toLowerCase().includes(keyword) ||
         p.profiles?.phone?.toLowerCase().includes(keyword)
+
       return matchFilter && matchSearch
     })
   }, [filter, list, search])
 
   async function handleApprove(petaniId: string, userId: string) {
     setLoading(petaniId)
+
+    const selected = list.find((p) => p.id === petaniId)
+
+    if (!selected?.ktp_url) {
+      showToast('Petani belum mengupload KTP.', 'error')
+      setLoading(null)
+      return
+    }
+
     const supabase = createClient()
 
     const { error: fpError } = await supabase
@@ -124,7 +140,14 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       type: 'system',
     })
 
-    setList((prev) => prev.map((p) => p.id === petaniId ? { ...p, verify_status: 'approved', reject_reason: null } : p))
+    setList((prev) =>
+      prev.map((p) =>
+        p.id === petaniId
+          ? { ...p, verify_status: 'approved', reject_reason: null }
+          : p
+      )
+    )
+
     showToast('Petani berhasil disetujui.')
     setLoading(null)
   }
@@ -143,6 +166,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
     }
 
     const reason = rejectReason.trim()
+
     const { error } = await supabase
       .from('farmer_profiles')
       .update({
@@ -168,7 +192,14 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       type: 'system',
     })
 
-    setList((prev) => prev.map((p) => p.id === rejectModal.id ? { ...p, verify_status: 'rejected', reject_reason: reason } : p))
+    setList((prev) =>
+      prev.map((p) =>
+        p.id === rejectModal.id
+          ? { ...p, verify_status: 'rejected', reject_reason: reason }
+          : p
+      )
+    )
+
     showToast('Status petani berhasil diperbarui.')
     setRejectModal(null)
     setRejectReason('')
@@ -186,16 +217,84 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
         </div>
       )}
 
+      {preview && (
+        <div
+          className="fixed inset-0 z-[75] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="w-full max-w-4xl rounded-[30px] bg-white p-4 shadow-[0_30px_90px_rgba(0,0,0,0.28)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="font-['Sora'] text-lg font-extrabold text-[#0A4C3E]">
+                  {preview.title}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#6B7C6A]">
+                  Preview dokumen hanya dimuat saat dibuka.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100"
+                aria-label="Tutup preview"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {isPdf(preview.url) ? (
+              <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] bg-[#F8FCF7] p-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-[#0A4C3E] shadow-sm">
+                  <FileText size={32} />
+                </div>
+                <p className="mt-4 text-sm font-extrabold text-[#0A4C3E]">
+                  Dokumen berbentuk PDF
+                </p>
+                <a
+                  href={preview.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center justify-center rounded-2xl bg-[#0A4C3E] px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5"
+                >
+                  Buka PDF
+                </a>
+              </div>
+            ) : (
+              <img
+                src={preview.url}
+                alt={preview.title}
+                className="max-h-[72vh] w-full rounded-[24px] bg-[#F8FCF7] object-contain"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {rejectModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm" onClick={() => setRejectModal(null)}>
-          <div className="w-full max-w-md rounded-[30px] bg-white p-6 shadow-[0_30px_90px_rgba(0,0,0,0.22)]" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          onClick={() => setRejectModal(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-[30px] bg-white p-6 shadow-[0_30px_90px_rgba(0,0,0,0.22)]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
               <XCircle size={25} />
             </div>
-            <h3 className="mt-4 font-['Sora'] text-xl font-extrabold text-[#0A4C3E]">Tolak Verifikasi</h3>
+
+            <h3 className="mt-4 font-['Sora'] text-xl font-extrabold text-[#0A4C3E]">
+              Tolak Verifikasi
+            </h3>
+
             <p className="mt-2 text-sm font-medium leading-6 text-[#6B7C6A]">
               Berikan alasan penolakan untuk <b>{rejectModal.name}</b>. Alasan ini akan dikirim ke petani.
             </p>
+
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -203,6 +302,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
               placeholder="Contoh: Dokumen KTP belum jelas atau data lahan belum lengkap."
               className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0A4C3E] outline-none transition focus:border-[#71BC68] focus:ring-4 focus:ring-[#71BC68]/15"
             />
+
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setRejectModal(null)}
@@ -210,6 +310,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
               >
                 Batal
               </button>
+
               <button
                 onClick={handleReject}
                 disabled={!rejectReason.trim() || !!loading}
@@ -225,15 +326,18 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
       <div className="mx-auto max-w-7xl">
         <section className="relative overflow-hidden rounded-[34px] border border-[#0A4C3E]/10 bg-white p-6 shadow-[0_20px_70px_rgba(10,76,62,0.08)] sm:p-8">
           <div className="pointer-events-none absolute right-[-60px] top-[-90px] h-72 w-72 rounded-full bg-[#71BC68]/10" />
+
           <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-[#F0F8EE] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.22em] text-[#71BC68]">
                 <ShieldCheck size={16} />
                 Farmer Verification
               </div>
+
               <h1 className="mt-5 font-['Sora'] text-3xl font-extrabold tracking-[-1px] text-[#0A4C3E] sm:text-4xl">
                 Verifikasi Petani
               </h1>
+
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-[#6B7C6A]">
                 Review kelengkapan profil petani, dokumen pendukung, dan status pengajuan agar marketplace tetap aman.
               </p>
@@ -244,10 +348,12 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                 <p className="text-xs font-extrabold text-[#6B7C6A]">Pending</p>
                 <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-[#0A4C3E]">{counts.pending}</p>
               </div>
+
               <div className="rounded-2xl bg-emerald-50 p-4">
                 <p className="text-xs font-extrabold text-emerald-700">Approved</p>
                 <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-emerald-800">{counts.approved}</p>
               </div>
+
               <div className="rounded-2xl bg-red-50 p-4">
                 <p className="text-xs font-extrabold text-red-700">Rejected</p>
                 <p className="mt-2 font-['Sora'] text-2xl font-extrabold text-red-800">{counts.rejected}</p>
@@ -262,15 +368,22 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
               {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => {
                 const active = filter === tab
                 const label = tab === 'all' ? 'Semua' : STATUS_CONFIG[tab].label
+
                 return (
                   <button
                     key={tab}
                     onClick={() => setFilter(tab)}
                     className="flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold transition"
-                    style={{ background: active ? '#0A4C3E' : '#F4FAF3', color: active ? 'white' : '#49645B' }}
+                    style={{
+                      background: active ? '#0A4C3E' : '#F4FAF3',
+                      color: active ? 'white' : '#49645B',
+                    }}
                   >
                     {label}
-                    <span className="rounded-full px-2 py-0.5 text-[11px]" style={{ background: active ? 'rgba(255,255,255,0.16)' : 'rgba(10,76,62,0.08)' }}>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[11px]"
+                      style={{ background: active ? 'rgba(255,255,255,0.16)' : 'rgba(10,76,62,0.08)' }}
+                    >
                       {counts[tab]}
                     </span>
                   </button>
@@ -283,7 +396,7 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama, kebun, lokasi, atau nomor HP..."
+                placeholder="Cari nama, email, kebun, lokasi, atau nomor HP..."
                 className="w-full bg-transparent text-sm font-semibold text-[#0A4C3E] outline-none placeholder:text-[#9CA3AF]"
               />
               <SlidersHorizontal size={17} className="text-[#8A9A89]" />
@@ -308,25 +421,54 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                 const isExpanded = expandedId === p.id
 
                 return (
-                  <div key={p.id} className="overflow-hidden rounded-[28px] border border-[#0A4C3E]/10 bg-white shadow-[0_14px_45px_rgba(10,76,62,0.05)]">
+                  <div
+                    key={p.id}
+                    className="overflow-hidden rounded-[28px] border border-[#0A4C3E]/10 bg-white shadow-[0_14px_45px_rgba(10,76,62,0.05)]"
+                  >
                     <div className="grid gap-4 p-4 lg:grid-cols-[1fr_auto] lg:items-center lg:p-5">
                       <div className="flex min-w-0 gap-4">
                         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-extrabold ${status.card}`}>
                           {p.profiles?.full_name?.[0]?.toUpperCase() ?? 'P'}
                         </div>
+
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-base font-extrabold text-[#0A4C3E]">{p.profiles?.full_name ?? 'Petani'}</p>
+                            <p className="truncate text-base font-extrabold text-[#0A4C3E]">
+                              {p.profiles?.full_name ?? 'Petani'}
+                            </p>
+
                             <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold ring-1 ${status.badge}`}>
                               <StatusIcon size={12} />
                               {status.label}
                             </span>
                           </div>
+
                           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-[#6B7C6A]">
-                            <span className="inline-flex items-center gap-1"><Building2 size={13} /> {p.farm_name}</span>
-                            <span className="inline-flex items-center gap-1"><MapPin size={13} /> {p.farm_location}</span>
-                            {p.profiles?.phone && <span className="inline-flex items-center gap-1"><Phone size={13} /> {p.profiles.phone}</span>}
+                            {p.profiles?.email && (
+                              <span className="inline-flex items-center gap-1">
+                                <Mail size={13} />
+                                {p.profiles.email}
+                              </span>
+                            )}
+
+                            <span className="inline-flex items-center gap-1">
+                              <Building2 size={13} />
+                              {p.farm_name}
+                            </span>
+
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin size={13} />
+                              {p.farm_location}
+                            </span>
+
+                            {p.profiles?.phone && (
+                              <span className="inline-flex items-center gap-1">
+                                <Phone size={13} />
+                                {p.profiles.phone}
+                              </span>
+                            )}
                           </div>
+
                           {p.reject_reason && (
                             <div className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-700">
                               Alasan penolakan: {p.reject_reason}
@@ -336,28 +478,36 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                        {p.ktp_url && (
-                          <a
-                            href={p.ktp_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {p.ktp_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreview({ title: 'KTP Petani', url: p.ktp_url! })}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-extrabold text-blue-700 transition hover:-translate-y-0.5 sm:flex-none"
                           >
-                            <FileText size={16} />
+                            <Eye size={16} />
                             Lihat KTP
-                          </a>
+                          </button>
+                        ) : (
+                          <div className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 sm:flex-none">
+                            <XCircle size={16} />
+                            KTP Belum Upload
+                          </div>
                         )}
 
-                        {p.cert_url && (
-                          <a
-                            href={p.cert_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {p.cert_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreview({ title: 'Sertifikat Petani', url: p.cert_url! })}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-700 transition hover:-translate-y-0.5 sm:flex-none"
                           >
-                            <FileText size={16} />
-                            Lihat Sertifikat
-                          </a>
+                            <Eye size={16} />
+                            Sertifikat
+                          </button>
+                        ) : (
+                          <div className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-extrabold text-amber-700 sm:flex-none">
+                            <Clock size={16} />
+                            Sertifikat Opsional
+                          </div>
                         )}
 
                         {p.verify_status === 'pending' && (
@@ -421,13 +571,10 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                           <ChevronDown
                             size={18}
                             className="transition"
-                            style={{
-                              transform: isExpanded ? 'rotate(180deg)' : 'none',
-                            }}
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
                           />
                         </button>
                       </div>
-
                     </div>
 
                     {isExpanded && (
@@ -437,27 +584,53 @@ export default function VerifikasiClient({ petani, adminId }: Props) {
                             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Luas Lahan</p>
                             <p className="mt-2 text-sm font-extrabold text-[#0A4C3E]">{p.farm_size ?? '-'}</p>
                           </div>
+
+                          <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Email</p>
+                            <p className="mt-2 truncate text-sm font-extrabold text-[#0A4C3E]">{p.profiles?.email ?? '-'}</p>
+                          </div>
+
                           <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
                             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Tanggal Daftar</p>
                             <p className="mt-2 text-sm font-extrabold text-[#0A4C3E]">
-                              {new Date(p.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(p.created_at).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
                             </p>
                           </div>
+
                           <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
                             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">KTP</p>
                             {p.ktp_url ? (
-                              <a href={p.ktp_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]">
-                                <FileText size={15} /> Lihat KTP
-                              </a>
-                            ) : <p className="mt-2 text-sm font-extrabold text-[#6B7C6A]">Belum upload</p>}
+                              <button
+                                type="button"
+                                onClick={() => setPreview({ title: 'KTP Petani', url: p.ktp_url! })}
+                                className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]"
+                              >
+                                <Eye size={15} />
+                                Lihat KTP
+                              </button>
+                            ) : (
+                              <p className="mt-2 text-sm font-extrabold text-red-600">Belum upload</p>
+                            )}
                           </div>
+
                           <div className="rounded-2xl bg-white p-4 ring-1 ring-[#0A4C3E]/8">
                             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8A9A89]">Sertifikat</p>
                             {p.cert_url ? (
-                              <a href={p.cert_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]">
-                                <FileText size={15} /> Lihat Sertifikat
-                              </a>
-                            ) : <p className="mt-2 text-sm font-extrabold text-[#6B7C6A]">Belum upload</p>}
+                              <button
+                                type="button"
+                                onClick={() => setPreview({ title: 'Sertifikat Petani', url: p.cert_url! })}
+                                className="mt-2 inline-flex items-center gap-2 text-sm font-extrabold text-[#0A4C3E]"
+                              >
+                                <Eye size={15} />
+                                Lihat Sertifikat
+                              </button>
+                            ) : (
+                              <p className="mt-2 text-sm font-extrabold text-[#6B7C6A]">Opsional / belum upload</p>
+                            )}
                           </div>
                         </div>
                       </div>

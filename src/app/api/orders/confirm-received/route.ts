@@ -5,13 +5,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { orderId } = await req.json()
+
     if (!orderId) {
       return NextResponse.json({ error: 'orderId wajib diisi' }, { status: 400 })
     }
@@ -42,7 +46,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Kalau sudah selesai, jangan tambah terjual lagi supaya tidak dobel.
     if (order.status === 'done') {
       return NextResponse.json({ order })
     }
@@ -58,20 +61,29 @@ export async function POST(req: NextRequest) {
 
     const { data: updatedOrder, error: updateOrderError } = await admin
       .from('orders')
-      .update({ status: 'done', done_at: now })
+      .update({
+        status: 'done',
+        done_at: now,
+      })
       .eq('id', orderId)
+      .eq('status', 'shipped')
       .select('id, status, done_at')
       .single()
 
     if (updateOrderError || !updatedOrder) {
-      console.error('[confirm-received] Gagal update order:', updateOrderError?.message)
-      return NextResponse.json({ error: 'Gagal mengkonfirmasi pesanan' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Gagal mengkonfirmasi pesanan atau pesanan sudah diproses.' },
+        { status: 500 }
+      )
     }
 
     const items = Array.isArray(order.order_items) ? order.order_items : []
 
     for (const item of items) {
       if (!item.product_id) continue
+
+      const quantity = Number(item.quantity ?? 0)
+      if (quantity <= 0) continue
 
       const { data: product, error: productError } = await admin
         .from('products')
@@ -84,7 +96,7 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const nextSoldCount = Number(product.sold_count ?? 0) + Number(item.quantity ?? 0)
+      const nextSoldCount = Number(product.sold_count ?? 0) + quantity
 
       const { error: soldError } = await admin
         .from('products')
@@ -96,7 +108,10 @@ export async function POST(req: NextRequest) {
 
       if (soldError) {
         console.error('[confirm-received] Gagal update sold_count:', soldError.message)
-        return NextResponse.json({ error: 'Pesanan selesai, tapi gagal update produk terjual' }, { status: 500 })
+        return NextResponse.json(
+          { error: 'Pesanan selesai, tapi gagal update jumlah terjual produk.' },
+          { status: 500 }
+        )
       }
     }
 

@@ -10,8 +10,18 @@ import {
 } from 'lucide-react'
 
 interface OrderItem {
-  id: string; product_name: string; price: number
-  unit: string; quantity: number; subtotal: number
+  id: string
+  product_id?: string | null
+  product_name: string
+  price: number
+  unit: string
+  quantity: number
+  subtotal: number
+  products?: {
+    id: string
+    name: string
+    image_urls: string[] | null
+  } | null
 }
 
 interface Order {
@@ -189,8 +199,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
       <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
-
-        {/* Header */}
         <div className="flex items-center gap-2.5 mb-5">
           <ReceiptText size={20} color="#0A4C3E" />
           <h1 className="text-xl font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
@@ -198,7 +206,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
           </h1>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-5" style={{ scrollbarWidth: 'none' }}>
           {FILTER_TABS.map(tab => {
             const count = tab.key === 'all' ? orders.length : orders.filter(o => o.status === tab.key).length
@@ -223,7 +230,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
           })}
         </div>
 
-        {/* Empty state */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl"
             style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
@@ -268,8 +274,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     border: `1.5px solid ${isPending ? 'rgba(133,100,4,0.3)' : isShipped ? 'rgba(10,76,62,0.3)' : 'rgba(113,188,104,0.15)'}`,
                     boxShadow: isPending || isShipped ? '0 2px 12px rgba(10,76,62,0.06)' : 'none',
                   }}>
-
-                  {/* ── HEADER ── */}
                   <div className="px-4 pt-4 pb-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -290,16 +294,14 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                       </span>
                     </div>
 
-                    {/* Sublabel */}
                     <p className="text-xs mt-2 ml-13 pl-1" style={{ color: cfg.color, fontWeight: 500 }}>
                       {cfg.sublabel}
                     </p>
 
-                    {/* Ringkasan harga */}
                     <div className="flex items-center justify-between mt-3 pt-2.5"
                       style={{ borderTop: '1px solid #f3f4f6' }}>
                       <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                        {order.order_items.length} produk
+                        {order.order_items.length} item
                         {order.shipping_courier ? ` · ${order.shipping_courier.toUpperCase()}` : ''}
                       </p>
                       <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
@@ -308,7 +310,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   </div>
 
-                  {/* ── STEPPER — langsung kelihatan, tidak perlu expand ── */}
                   {showStepper && (
                     <div className="px-4 pb-4 pt-1">
                       <div className="flex items-start">
@@ -352,7 +353,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* ── RESI — langsung kelihatan kalau sudah dikirim ── */}
                   {isShipped && order.tracking_number && (
                     <div className="mx-4 mb-3 flex items-center gap-3 px-3 py-2.5 rounded-xl"
                       style={{ background: '#F4FAF3', border: '1px solid rgba(113,188,104,0.3)' }}>
@@ -383,9 +383,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* ── AKSI UTAMA — langsung kelihatan ── */}
-
-                  {/* PENDING */}
                   {isPending && (
                     <div className="px-4 pb-4 space-y-2">
                       <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl"
@@ -406,7 +403,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* PAID */}
                   {isPaid && (
                     <div className="px-4 pb-4">
                       <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
@@ -424,7 +420,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* SHIPPED — konfirmasi diterima */}
                   {isShipped && !isConfirmingThis && (
                     <div className="px-4 pb-4">
                       <button onClick={() => setConfirming(order.id)}
@@ -463,7 +458,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* DONE */}
                   {isDone && (
                     <div className="px-4 pb-4 flex gap-2">
                       <button onClick={() => router.push('/produk')}
@@ -479,38 +473,77 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                     </div>
                   )}
 
-                  {/* ── TOGGLE DETAIL ── */}
                   <button onClick={() => toggleExpand(order.id)}
                     className="w-full flex items-center justify-center gap-1.5 py-2.5 transition"
                     style={{ borderTop: '1px solid #f3f4f6', color: '#9CA3AF', fontSize: '12px' }}>
                     {isExp ? <><ChevronUp size={13} /> Sembunyikan detail</> : <><ChevronDown size={13} /> Lihat detail pesanan</>}
                   </button>
 
-                  {/* ── DETAIL EXPAND ── */}
                   {isExp && (
                     <div className="px-4 pb-4" style={{ borderTop: '1px solid #f3f4f6' }}>
-
-                      {/* Items */}
-                      <div className="space-y-2 mt-3">
-                        {order.order_items.map(item => (
-                          <div key={item.id} className="flex justify-between items-start py-2"
-                            style={{ borderBottom: '1px solid #f9f9f9' }}>
-                            <div className="flex-1 min-w-0 pr-3">
-                              <p className="text-sm font-semibold truncate" style={{ color: '#0A4C3E' }}>
-                                {item.product_name}
-                              </p>
-                              <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
-                                {item.quantity} {item.unit} × Rp {item.price.toLocaleString('id-ID')}
-                              </p>
-                            </div>
-                            <p className="text-sm font-bold shrink-0" style={{ color: '#0A4C3E' }}>
-                              Rp {item.subtotal.toLocaleString('id-ID')}
-                            </p>
+                      <div className="space-y-3 mt-3">
+                        {order.order_items.length === 0 ? (
+                          <div
+                            className="rounded-xl px-4 py-3 text-xs font-semibold"
+                            style={{
+                              background: '#FFF8DC',
+                              color: '#856404',
+                              border: '1px solid #FFEEBA',
+                            }}
+                          >
+                            Detail produk tidak ditemukan.
                           </div>
-                        ))}
+                        ) : (
+                          order.order_items.map(item => {
+                            const imageUrl = item.products?.image_urls?.[0]
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex items-center gap-3 rounded-2xl p-3"
+                                style={{
+                                  background: '#FAFAFA',
+                                  border: '1px solid #F1F5F9',
+                                }}
+                              >
+                                <div
+                                  className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                                  style={{ background: '#F4FAF3' }}
+                                >
+                                  {imageUrl ? (
+                                    <img
+                                      src={imageUrl}
+                                      alt={item.product_name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <Package size={24} color="#71BC68" />
+                                  )}
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-bold" style={{ color: '#0A4C3E' }}>
+                                    {item.product_name || item.products?.name || 'Produk KiTani'}
+                                  </p>
+                                  <p className="mt-1 text-xs" style={{ color: '#9CA3AF' }}>
+                                    {item.quantity} {item.unit} × Rp {Number(item.price ?? 0).toLocaleString('id-ID')}
+                                  </p>
+                                  <p className="mt-1 text-[11px] font-semibold" style={{ color: '#6B7C6A' }}>
+                                    Subtotal
+                                  </p>
+                                </div>
+
+                                <div className="shrink-0 text-right">
+                                  <p className="text-sm font-black" style={{ color: '#0A4C3E' }}>
+                                    Rp {Number(item.subtotal ?? 0).toLocaleString('id-ID')}
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
                       </div>
 
-                      {/* Biaya */}
                       <div className="mt-3 space-y-1.5 pb-3" style={{ borderBottom: '1px solid #f3f4f6' }}>
                         <div className="flex justify-between">
                           <p className="text-xs" style={{ color: '#9CA3AF' }}>Subtotal</p>
@@ -532,7 +565,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
                         </div>
                       </div>
 
-                      {/* Info pengiriman */}
                       <div className="mt-3 p-3 rounded-xl" style={{ background: '#F4FAF3' }}>
                         <div className="flex items-center gap-1.5 mb-2">
                           <MapPin size={13} color="#71BC68" />
@@ -557,7 +589,6 @@ export default function TransaksiClient({ orders: initialOrders }: Props) {
         )}
       </div>
 
-      {/* Toast */}
       {toast && (
         <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap"
           style={{

@@ -6,16 +6,27 @@ import {
   Search, X, ShoppingCart, Leaf, Cherry,
   Sprout, Flower2, Bean, Package,
   Plus, Minus, Check, ChevronDown, ArrowUpDown,
-  TrendingUp, Clock, ArrowUp, ArrowDown
+  TrendingUp, Clock, ArrowUp, ArrowDown, Star, Beef
 } from 'lucide-react'
+import { GiMushroom } from "react-icons/gi";
 import { createClient } from '@/lib/supabase/client'
 
 interface Category { id: string; name: string; slug: string }
+
+interface ProductReview {
+  rating: number
+  comment: string | null
+  created_at: string
+}
+
 interface Product {
   id: string; name: string; description: string | null
   price: number; unit: string; stock: number
   image_urls: string[]; sold_count: number
   category_id: string | null
+  avg_rating?: number
+  review_count?: number
+  reviews?: ProductReview[]
   categories?: Category | null
   profiles?: { id: string; full_name: string | null } | null
 }
@@ -28,8 +39,14 @@ interface Props {
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
-  'sayuran-hijau': Leaf, 'buah-beri': Cherry, 'umbi-umbian': Sprout,
-  'herbal-rempah': Flower2, 'kacang-kacangan': Bean, 'lainnya': Package,
+  'sayuran-hijau': Leaf,
+  'buah-beri': Cherry,
+  'umbi-umbian': Sprout,
+  'herbal-rempah': Flower2,
+  'kacang-kacangan': Bean,
+  'daging': Beef,
+  'jamur': GiMushroom,
+  'lainnya': Package,
 }
 
 const SORT_OPTIONS = [
@@ -38,6 +55,25 @@ const SORT_OPTIONS = [
   { key: 'harga-terendah', label: 'Harga Terendah', icon: ArrowDown },
   { key: 'harga-tertinggi', label: 'Harga Tertinggi', icon: ArrowUp },
 ]
+
+function ProductRating({ product }: { product: Product }) {
+  const rating = Number(product.avg_rating ?? 0)
+  const count = Number(product.review_count ?? 0)
+
+  return (
+    <div className="mt-1 flex items-center gap-1 text-xs" style={{ color: '#9CA3AF' }}>
+      <Star size={12} color={count > 0 ? '#FFB347' : '#CBD5E1'} fill={count > 0 ? '#FFB347' : 'none'} />
+      {count > 0 ? (
+        <>
+          <span className="font-bold" style={{ color: '#0A4C3E' }}>{rating.toFixed(1)}</span>
+          <span>({count} ulasan)</span>
+        </>
+      ) : (
+        <span>Belum ada ulasan</span>
+      )}
+    </div>
+  )
+}
 
 export default function ProdukClient({ products, categories, initialKategori, initialSearch }: Props) {
   const router = useRouter()
@@ -50,6 +86,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [qty, setQty] = useState(1)
   const [addingCart, setAddingCart] = useState(false)
+  const [buyingNow, setBuyingNow] = useState(false)
   const [cartSuccess, setCartSuccess] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -57,7 +94,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sortRef = useRef<HTMLDivElement>(null)
 
-  // Tutup dropdown sort kalau klik di luar
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
@@ -66,7 +102,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // Debounce search — auto-push URL setelah 400ms berhenti ketik
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     setIsSearching(true)
@@ -79,7 +114,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
       setIsSearching(false)
     }, 400)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [search, selectedKategori, sort])
+  }, [search, selectedKategori, sort, router])
 
   function handleKategori(slug: string) {
     setSelectedKategori(prev => prev === slug ? '' : slug)
@@ -94,13 +129,11 @@ export default function ProdukClient({ products, categories, initialKategori, in
     setSearch('')
   }
 
-  // Sort produk di client (data sudah di-fetch, sort secara lokal supaya instant)
   const sorted = useMemo(() => {
     const arr = [...products]
     if (sort === 'harga-terendah') return arr.sort((a, b) => a.price - b.price)
     if (sort === 'harga-tertinggi') return arr.sort((a, b) => b.price - a.price)
     if (sort === 'terlaris') return arr.sort((a, b) => b.sold_count - a.sold_count)
-    // terbaru — urutan default dari server sudah DESC created_at
     return arr
   }, [products, sort])
 
@@ -109,23 +142,78 @@ export default function ProdukClient({ products, categories, initialKategori, in
     setTimeout(() => setToast(null), 3000)
   }
 
-  async function handleAddToCart() {
+  async function upsertCartItem(shouldRedirect = false) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+
+    if (!user) {
+      router.push('/login')
+      return false
+    }
+
+    if (!selectedProduct) return false
+
+    const { data: existing } = await supabase
+      .from('carts')
+      .select('id, quantity')
+      .eq('user_id', user.id)
+      .eq('product_id', selectedProduct.id)
+      .single()
+
+    if (existing) {
+      await supabase
+        .from('carts')
+        .update({
+          quantity: existing.quantity + qty,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+    } else {
+      await supabase
+        .from('carts')
+        .insert({
+          user_id: user.id,
+          product_id: selectedProduct.id,
+          quantity: qty,
+        })
+    }
+
+    if (shouldRedirect) {
+      router.push('/checkout')
+    }
+
+    return true
+  }
+
+  async function handleAddToCart() {
     if (!selectedProduct) return
     setAddingCart(true)
-    const { data: existing } = await supabase.from('carts').select('id, quantity')
-      .eq('user_id', user.id).eq('product_id', selectedProduct.id).single()
-    if (existing) {
-      await supabase.from('carts').update({ quantity: existing.quantity + qty, updated_at: new Date().toISOString() }).eq('id', existing.id)
-    } else {
-      await supabase.from('carts').insert({ user_id: user.id, product_id: selectedProduct.id, quantity: qty })
-    }
+
+    const success = await upsertCartItem(false)
+
     setAddingCart(false)
+
+    if (!success) return
+
     setCartSuccess(true)
-    setTimeout(() => { setCartSuccess(false); setSelectedProduct(null); setQty(1) }, 1500)
+    setTimeout(() => {
+      setCartSuccess(false)
+      setSelectedProduct(null)
+      setQty(1)
+    }, 1500)
+
     showToast(`${selectedProduct.name} ditambahkan ke keranjang!`)
+  }
+
+  async function handleBuyNow() {
+    if (!selectedProduct) return
+    setBuyingNow(true)
+
+    const success = await upsertCartItem(true)
+
+    if (!success) {
+      setBuyingNow(false)
+    }
   }
 
   const currentSort = SORT_OPTIONS.find(s => s.key === sort) ?? SORT_OPTIONS[0]
@@ -133,8 +221,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', background: '#F4FAF3', minHeight: '100vh' }}>
       <div className="max-w-5xl mx-auto px-4 py-5 pb-28">
-
-        {/* Search bar — tanpa tombol Cari, auto debounce */}
         <div className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl mb-4"
           style={{ border: '1.5px solid rgba(113,188,104,0.25)', boxShadow: '0 2px 8px rgba(10,76,62,0.05)' }}>
           {isSearching
@@ -156,9 +242,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
           )}
         </div>
 
-        {/* Kategori + Sort dalam satu baris */}
         <div className="flex items-center gap-2 mb-5">
-          {/* Kategori scroll */}
           <div className="flex gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
             <button onClick={() => handleKategori('')}
               className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition"
@@ -186,7 +270,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
             })}
           </div>
 
-          {/* Sort dropdown */}
           <div ref={sortRef} className="relative shrink-0">
             <button onClick={() => setSortOpen(p => !p)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition"
@@ -224,7 +307,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
           </div>
         </div>
 
-        {/* Info hasil */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>
             {sorted.length} produk
@@ -242,7 +324,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
           )}
         </div>
 
-        {/* Product grid */}
         {sorted.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl"
             style={{ border: '1px solid rgba(113,188,104,0.15)' }}>
@@ -278,13 +359,14 @@ export default function ProdukClient({ products, categories, initialKategori, in
                   <p className="text-xs font-semibold line-clamp-2 mb-1 leading-snug" style={{ color: '#0A4C3E' }}>
                     {product.name}
                   </p>
-                  <p className="text-xs mb-1.5 truncate" style={{ color: '#9CA3AF' }}>
+                  <p className="text-xs mb-1 truncate" style={{ color: '#9CA3AF' }}>
                     {product.profiles?.full_name ?? 'Petani KiTani'}
                   </p>
                   <p className="text-sm font-bold" style={{ color: '#0A4C3E' }}>
                     Rp {product.price.toLocaleString('id-ID')}
                     <span className="text-xs font-normal" style={{ color: '#9CA3AF' }}>/{product.unit}</span>
                   </p>
+                  <ProductRating product={product} />
                   <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
                     {product.sold_count > 0 ? `Terjual ${product.sold_count}` : 'Baru'}
                   </p>
@@ -295,7 +377,6 @@ export default function ProdukClient({ products, categories, initialKategori, in
         )}
       </div>
 
-      {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.5)' }}
@@ -316,6 +397,7 @@ export default function ProdukClient({ products, categories, initialKategori, in
                 <X size={16} color="white" />
               </button>
             </div>
+
             <div className="p-5">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h2 className="text-lg font-bold" style={{ color: '#0A4C3E', fontFamily: 'Sora, sans-serif' }}>
@@ -328,18 +410,26 @@ export default function ProdukClient({ products, categories, initialKategori, in
                   </span>
                 )}
               </div>
+
               <p className="text-sm mb-1" style={{ color: '#6B7C6A' }}>
                 oleh {selectedProduct.profiles?.full_name ?? 'Petani KiTani'}
               </p>
+
+              <div className="mb-2">
+                <ProductRating product={selectedProduct} />
+              </div>
+
               <p className="text-xl font-bold mb-3" style={{ color: '#0A4C3E' }}>
                 Rp {selectedProduct.price.toLocaleString('id-ID')}
                 <span className="text-sm font-normal text-gray-400"> / {selectedProduct.unit}</span>
               </p>
+
               {selectedProduct.description && (
                 <p className="text-sm mb-4 leading-relaxed" style={{ color: '#6B7C6A' }}>
                   {selectedProduct.description}
                 </p>
               )}
+
               <div className="flex items-center gap-4 mb-4">
                 <p className="text-xs" style={{ color: '#6B7C6A' }}>
                   Stok: <span className="font-bold" style={{ color: '#0A4C3E' }}>{selectedProduct.stock} {selectedProduct.unit}</span>
@@ -348,6 +438,34 @@ export default function ProdukClient({ products, categories, initialKategori, in
                   Terjual: <span className="font-bold" style={{ color: '#0A4C3E' }}>{selectedProduct.sold_count}</span>
                 </p>
               </div>
+
+              {selectedProduct.review_count && selectedProduct.review_count > 0 && (
+                <div className="mb-4 rounded-2xl p-3" style={{ background: '#F8FCF7', border: '1px solid rgba(113,188,104,0.18)' }}>
+                  <p className="text-sm font-bold mb-2" style={{ color: '#0A4C3E' }}>
+                    Ulasan Pembeli
+                  </p>
+                  <div className="space-y-2">
+                    {(selectedProduct.reviews ?? []).map((review, index) => (
+                      <div key={`${review.created_at}-${index}`} className="rounded-xl bg-white p-3">
+                        <div className="flex items-center gap-1 mb-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star
+                              key={star}
+                              size={12}
+                              color="#FFB347"
+                              fill={Number(review.rating) >= star ? '#FFB347' : 'none'}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs leading-relaxed" style={{ color: '#6B7C6A' }}>
+                          {review.comment || 'Pembeli tidak menulis komentar.'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-4 p-3 rounded-2xl"
                 style={{ background: '#F4FAF3' }}>
                 <p className="text-sm font-semibold" style={{ color: '#0A4C3E' }}>Jumlah</p>
@@ -365,29 +483,46 @@ export default function ProdukClient({ products, categories, initialKategori, in
                   </button>
                 </div>
               </div>
+
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm" style={{ color: '#6B7C6A' }}>Total</p>
                 <p className="text-lg font-bold" style={{ color: '#0A4C3E' }}>
                   Rp {(selectedProduct.price * qty).toLocaleString('id-ID')}
                 </p>
               </div>
-              <button onClick={handleAddToCart} disabled={addingCart || cartSuccess || selectedProduct.stock === 0}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition"
-                style={{
-                  background: cartSuccess ? '#71BC68' : selectedProduct.stock === 0 ? '#e5e7eb' : '#0A4C3E',
-                  color: cartSuccess ? '#0A4C3E' : selectedProduct.stock === 0 ? '#9CA3AF' : '#71BC68',
-                }}>
-                {cartSuccess ? <><Check size={18} /> Ditambahkan!</>
-                  : addingCart ? 'Menambahkan...'
-                    : selectedProduct.stock === 0 ? 'Stok Habis'
-                      : <><ShoppingCart size={18} /> Tambah ke Keranjang</>}
-              </button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingCart || cartSuccess || buyingNow || selectedProduct.stock === 0}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition"
+                  style={{
+                    background: cartSuccess ? '#71BC68' : selectedProduct.stock === 0 ? '#e5e7eb' : '#F4FAF3',
+                    color: cartSuccess ? '#0A4C3E' : selectedProduct.stock === 0 ? '#9CA3AF' : '#0A4C3E',
+                    border: '1px solid rgba(113,188,104,0.3)',
+                  }}>
+                  {cartSuccess ? <><Check size={18} /> Ditambahkan</>
+                    : addingCart ? 'Menambahkan...'
+                      : selectedProduct.stock === 0 ? 'Stok Habis'
+                        : <><ShoppingCart size={18} /> Keranjang</>}
+                </button>
+
+                <button
+                  onClick={handleBuyNow}
+                  disabled={buyingNow || addingCart || selectedProduct.stock === 0}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition"
+                  style={{
+                    background: selectedProduct.stock === 0 ? '#e5e7eb' : '#0A4C3E',
+                    color: selectedProduct.stock === 0 ? '#9CA3AF' : '#71BC68',
+                  }}>
+                  {buyingNow ? 'Memproses...' : 'Beli Sekarang'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
         <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg whitespace-nowrap"
           style={{ background: toast.type === 'success' ? '#0A4C3E' : '#dc3545', color: 'white' }}>
