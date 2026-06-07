@@ -76,14 +76,14 @@ export default function LoginPage() {
           <div>
             {/* Logo Desktop: Ukuran scale dinaikkan ke 1.65 agar lebih ngepress */}
             <div className="mb-8 flex max-w-xl items-center justify-start">
-              <div className="flex h-[140px] w-[140px] items-center justify-center overflow-hidden rounded-[32px] bg-white p-0 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <div className="flex h-[140px] w-[140px] items-center justify-center rounded-[32px] bg-white p-3 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image
                   src="/images/logoKitani.png"
                   alt="KiTani"
                   width={140}
                   height={140}
                   priority
-                  className="h-full w-full scale-[1.65] object-contain"
+                  className="h-full w-full object-contain"
                 />
               </div>
             </div>
@@ -174,14 +174,14 @@ export default function LoginPage() {
 
             {/* Logo Mobile: Ukuran scale dinaikkan ke 1.6 agar seimbang */}
             <div className="mb-6 flex justify-center lg:hidden">
-              <div className="flex h-[125px] w-[125px] items-center justify-center overflow-hidden rounded-[30px] bg-white p-0 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <div className="flex h-[125px] w-[125px] items-center justify-center rounded-[30px] bg-white p-3 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image
                   src="/images/logoKitani.png"
                   alt="KiTani"
                   width={125}
                   height={125}
                   priority
-                  className="h-full w-full scale-[1.6] object-contain"
+                  className="h-full w-full object-contain"
                 />
               </div>
             </div>

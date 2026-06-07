@@ -168,9 +168,9 @@ export default function RegisterPage() {
         <section className="relative hidden min-h-screen flex-col justify-between px-14 pb-8 pt-10 lg:flex xl:px-24">
           <div>
             <div className="mb-8">
-              <div className="flex h-[140px] w-[140px] items-center justify-center overflow-hidden rounded-[32px] bg-white shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <div className="flex h-[140px] w-[140px] items-center justify-center rounded-[32px] bg-white p-3 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image src="/images/logoKitani.png" alt="KiTani" width={140} height={140} priority
-                  className="h-full w-full scale-[1.65] object-contain" />
+                  className="h-full w-full object-contain" />
               </div>
             </div>
 
@@ -240,9 +240,9 @@ export default function RegisterPage() {
           <div className="w-full max-w-[520px]">
 
             <div className="mb-6 flex justify-center lg:hidden">
-              <div className="flex h-[125px] w-[125px] items-center justify-center overflow-hidden rounded-[30px] bg-white shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
+              <div className="flex h-[125px] w-[125px] items-center justify-center rounded-[30px] bg-white p-3 shadow-[0_18px_45px_rgba(10,76,62,0.10)]">
                 <Image src="/images/logoKitani.png" alt="KiTani" width={125} height={125} priority
-                  className="h-full w-full scale-[1.6] object-contain" />
+                  className="h-full w-full object-contain" />
               </div>
             </div>
 
